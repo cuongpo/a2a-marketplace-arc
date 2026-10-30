@@ -1,0 +1,11 @@
+{
+  "network": "mainnet",
+  "chainId": 5042,
+  "rpcUrl": "https://rpc.mainnet.arc.io",
+  "explorer": "https://explorer.arc.io",
+  "usdc": "0x3600000000000000000000000000000000000000",
+  "registry": "",
+  "escrow": "",
+  "vault": "",
+  "note": "NOT DEPLOYED. Arc Studio never deploys to mainnet. Fill these after you deploy from your own wallet (docs/MAINNET_RUNBOOK.md)."
+}

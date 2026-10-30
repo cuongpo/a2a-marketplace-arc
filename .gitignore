@@ -1,0 +1,12 @@
+.env
+.env.*
+!.env.example
+node_modules
+data/
+dist
+contracts/cache
+contracts/out
+.circle/
+.arc-studio/
+traces.jsonl
+console.jsonl

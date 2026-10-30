@@ -1,0 +1,20 @@
+{
+  "network": "testnet",
+  "chainId": 5042002,
+  "rpcUrl": "https://rpc.testnet.arc.io",
+  "explorer": "https://explorer.testnet.arc.io",
+  "usdc": "0x3600000000000000000000000000000000000000",
+  "registry": "0x6fc13addb07161575841d9f8732dffbf271b9d29",
+  "escrow": "0xdf6f312e10e6d57eb9b7fafc599c92e87288d16e",
+  "vault": "0x8c29ac73ee2fef44542192c4a217620473bcfe76",
+  "adapter": "0x5f083614fc370621ea640ca29701cfd65be787da",
+  "identityRegistry": "0x8004A818BFB912233c491871b3d84c89A494BD9e",
+  "reputationRegistry": "0x8004B663056A597Dffe9eCcC1965A193B7388713",
+  "deployedAt": "2026-10-30T14:40:35Z",
+  "deployTxs": {
+    "EvidenceRegistry": "0x9848207e47368fd81aa543a3a4da0d7720ceb36302708eacbf02d485deda5034",
+    "MissionEscrow": "0xdf28054da03c77053927ccadfa4fb1a73d28ea4faea5a80c5bf3fcabeab487a2",
+    "AgentBudgetVault": "0x51db5eeb875875b9039458ab6be62f9f8d267a8ca262d5bb693967178a05b3cb",
+    "Erc8004Adapter": "0xb31b44cacdc788d7bf2dfd9b8c96bb53a081c3bc09dc8b47b7eb4076f20ccfe8"
+  }
+}

@@ -1,0 +1,130 @@
+
+=== mission #1 tile B2 (accept) local e20c735e
+OK   block 69860433 buyer agent funds mission from vault
+       https://explorer.testnet.arc.io/tx/0x83ef0ad3b8874b6710b823a5ecdc3c88d057f293ff06424c54c0edd055cb13a2
+       USDC ERC-20 Transfer: AgentBudgetVault -> MissionEscrow: 0.45 USDC
+       (1 EIP-7708 system log(s) present; same funds, not added)
+OK   block 69860442 provider accepts assignment
+       https://explorer.testnet.arc.io/tx/0x2b614c96912a4147e01f9b789deb3b3c3f9344d559f379b236424d738925288c
+OK   block 69860453 provider submits evidence hash
+       https://explorer.testnet.arc.io/tx/0xfba6b6dad81c95d631d38966b7950aed88fe83b604eed57211b2c621573a4bc7
+OK   block 69860462 verifier submits signed accept verdict
+       https://explorer.testnet.arc.io/tx/0x9224863584be73feb5ed0da718756fcfeb95a0b9bc1591b5b0826bc61025e636
+OK   block 69860532 keeper finalizes after challenge window and credits payouts
+       https://explorer.testnet.arc.io/tx/0x3ae0b0818dbc60e672e7143575e6eb1ba530eac404342d16d5dcc402780ddf05
+OK   block 69860541 vault reconciles settlement and restores refund to operator budget
+       https://explorer.testnet.arc.io/tx/0x42325f2d629ffa35e614a4f8238e9f6daad8fed742eb611c97796d975fe47a36
+OK   block 69860549 provider withdraws credited USDC
+       https://explorer.testnet.arc.io/tx/0xf8d6e66acc0356aac278904a030be37c64a3d7330daf25dfdcfc06b530e90126
+       USDC ERC-20 Transfer: MissionEscrow -> Provider A: Delta Gauge Co-op: 0.4 USDC
+       (1 EIP-7708 system log(s) present; same funds, not added)
+OK   block 69860558 verifier withdraws credited USDC
+       https://explorer.testnet.arc.io/tx/0x5e30f3a971240cbce381e5f5f775cd758a3bc5692b7da8c6cf4cecc165c87c93
+       USDC ERC-20 Transfer: MissionEscrow -> Verifier agent: 0.05 USDC
+       (1 EIP-7708 system log(s) present; same funds, not added)
+onchain status Settled, outcome ProviderPaid, refundAmount 0
+
+=== mission #2 tile C3 (reject) local 2ab0f2f7
+OK   block 69860581 buyer agent funds mission from vault
+       https://explorer.testnet.arc.io/tx/0xebe9818b0cb673c9e705516dbd289958d40eeffb726c0415de65318c81ff91cd
+       USDC ERC-20 Transfer: AgentBudgetVault -> MissionEscrow: 0.65 USDC
+       (1 EIP-7708 system log(s) present; same funds, not added)
+OK   block 69860591 provider accepts assignment
+       https://explorer.testnet.arc.io/tx/0xea88fed8162d8ba797131e5b90049da1098864f5b9b4bbddbcb8a7f0b592cacc
+OK   block 69860600 provider submits evidence hash
+       https://explorer.testnet.arc.io/tx/0x2f75a59134ebbb5a2a2c1fd1d4878aa3bb6bfd302181956cb4ec484765a6b2e8
+OK   block 69860610 verifier submits signed reject verdict
+       https://explorer.testnet.arc.io/tx/0xa8b8ed1c0e7622dff79d35c2315619fc5533ae2182436afae98da171070e7e59
+OK   block 69860674 keeper finalizes after challenge window and credits payouts
+       https://explorer.testnet.arc.io/tx/0xe97e83065c258a596c96b1e8940421a77175e60ebf76ef5f99e25d4f65355195
+OK   block 69860684 vault reconciles settlement and restores refund to operator budget
+       https://explorer.testnet.arc.io/tx/0x1dd3bfb7db26a242d97b782481e1973ed542d6b706d41c0d6b7c06961586a9dc
+       USDC ERC-20 Transfer: MissionEscrow -> AgentBudgetVault: 0.6 USDC
+       (1 EIP-7708 system log(s) present; same funds, not added)
+OK   block 69860692 verifier withdraws credited USDC
+       https://explorer.testnet.arc.io/tx/0x609c5e7364665f6c362b630c4cbbfb31b96cab59c476aaf1820b83843f21274c
+       USDC ERC-20 Transfer: MissionEscrow -> Verifier agent: 0.05 USDC
+       (1 EIP-7708 system log(s) present; same funds, not added)
+onchain status Settled, outcome BuyerRefunded, refundAmount 0.6
+
+=== mission #3 tile D1 (dispute) local dcdd6a3e
+OK   block 69860743 buyer agent funds mission from vault
+       https://explorer.testnet.arc.io/tx/0x5f17bd764d9a475d2c5b3b58129fbf6510c137bc6694706ddc320e945bf5f3a9
+       USDC ERC-20 Transfer: AgentBudgetVault -> MissionEscrow: 0.45 USDC
+       (1 EIP-7708 system log(s) present; same funds, not added)
+OK   block 69860753 provider accepts assignment
+       https://explorer.testnet.arc.io/tx/0x307c4609ceb7ef5a49f59ff70b26a82de6e0824aa0ce3ca9ac4fba97efffda74
+OK   block 69860772 provider submits evidence hash
+       https://explorer.testnet.arc.io/tx/0x71022b6a31fed71db77cfc6749860278ef0d90176b3a417cabe14114591a90b1
+OK   block 69860782 verifier submits signed escalate verdict
+       https://explorer.testnet.arc.io/tx/0x50d152a0297d5ca7a4be0acd9010960b8818be190413ef25feb6cc1f21f2509e
+OK   block 69860798 arbiter rules for buyer
+       https://explorer.testnet.arc.io/tx/0x0990774ac8f6d1bb2bc09df615e5028ea4954b1a2c19bee3fdc7ca931764aa0a
+OK   block 69860802 vault reconciles settlement and restores refund to operator budget
+       https://explorer.testnet.arc.io/tx/0x235535b21f731f334a80ceb856646c1d62efbe12c1b5c0a5ed62d06d0bdeb047
+       USDC ERC-20 Transfer: MissionEscrow -> AgentBudgetVault: 0.4 USDC
+       (1 EIP-7708 system log(s) present; same funds, not added)
+OK   block 69860806 verifier withdraws credited USDC
+       https://explorer.testnet.arc.io/tx/0x320a7484c3b1ae4fb8806dfc339769ab2b38c653ebef658ce762ee3bcc973edb
+       USDC ERC-20 Transfer: MissionEscrow -> Verifier agent: 0.05 USDC
+       (1 EIP-7708 system log(s) present; same funds, not added)
+onchain status Settled, outcome BuyerRefunded, refundAmount 0.4
+
+=== mission #4 tile E2 (reject) local de02363a
+OK   block 69860899 buyer agent funds mission from vault
+       https://explorer.testnet.arc.io/tx/0xc34aaf33d2ae51b2eb8cc93082317c16235576efc9dd0af443c19f5ecd5aa47b
+       USDC ERC-20 Transfer: AgentBudgetVault -> MissionEscrow: 0.35 USDC
+       (1 EIP-7708 system log(s) present; same funds, not added)
+OK   block 69860910 provider accepts assignment
+       https://explorer.testnet.arc.io/tx/0x41db26bb4360f4568d008aa360ae96608aa4233c28a18c9e59b27ca562db2ce0
+OK   block 69860919 provider submits evidence hash
+       https://explorer.testnet.arc.io/tx/0xd01fac50bb1338569972ef87984a9cb74ceed19d6be532f6ffbd29aa0dbdf941
+OK   block 69860929 verifier submits signed reject verdict
+       https://explorer.testnet.arc.io/tx/0xf2db3e2cf4ad318afae2af8bff53481c97414c70b8e4f2d0ab421f27cc0fa113
+OK   block 69860992 keeper finalizes after challenge window and credits payouts
+       https://explorer.testnet.arc.io/tx/0x62264b1ecf1b852bd31932f443bddc3dd3b809f05292261cc8d6ffd617d46742
+OK   block 69861002 vault reconciles settlement and restores refund to operator budget
+       https://explorer.testnet.arc.io/tx/0xb29ddee70f6d5c6388b7ea0cd09e6bb7ad9648fc6dcb939a025947641e2f6d97
+       USDC ERC-20 Transfer: MissionEscrow -> AgentBudgetVault: 0.3 USDC
+       (1 EIP-7708 system log(s) present; same funds, not added)
+OK   block 69861011 verifier withdraws credited USDC
+       https://explorer.testnet.arc.io/tx/0xafa023579f235f6a0934b5c65600ef0b13d5a0bf05bd8823ffbff3719b9bdebe
+       USDC ERC-20 Transfer: MissionEscrow -> Verifier agent: 0.05 USDC
+       (1 EIP-7708 system log(s) present; same funds, not added)
+onchain status Settled, outcome BuyerRefunded, refundAmount 0.3
+
+=== mission #5 tile F1 (accept) local 6308814e
+OK   block 69863876 buyer agent funds mission from vault
+       https://explorer.testnet.arc.io/tx/0x9225fbb41161dce92048845a0c8e26a8b29de8c6c6fff7aaebf5510c0b1740ab
+       USDC ERC-20 Transfer: AgentBudgetVault -> MissionEscrow: 0.45 USDC
+       (1 EIP-7708 system log(s) present; same funds, not added)
+OK   block 69863885 provider accepts assignment
+       https://explorer.testnet.arc.io/tx/0x02062b9e022b4e5711959e551a547182ea1efb60bc6146dced713012f2aefdd3
+OK   block 69863895 provider submits evidence hash
+       https://explorer.testnet.arc.io/tx/0x62938b0925cc243a237ec3f62a830ea2178e92aacd3db1b92aa635e1070c4593
+OK   block 69863905 verifier submits signed accept verdict
+       https://explorer.testnet.arc.io/tx/0x2f8af8bbd1797855f8f0f106e703791962966d76cd5273900f3294984bd4a900
+OK   block 69863974 keeper finalizes after challenge window and credits payouts
+       https://explorer.testnet.arc.io/tx/0x0d9f4328913201951220fd9ae8fa3a397d4c43562980c8bb0770a2c55726529e
+OK   block 69863984 vault reconciles settlement and restores refund to operator budget
+       https://explorer.testnet.arc.io/tx/0xc9be51df0d75dd9cbf480484bdf1f1fc04097e2e1b43ee12ed0ff0bb5d54a0d2
+OK   block 69863992 provider withdraws credited USDC
+       https://explorer.testnet.arc.io/tx/0x284a1cf3ee790ed81acc0b2711965986857b2395afa92e5fcf3fc57c110124be
+       USDC ERC-20 Transfer: MissionEscrow -> Provider A: Delta Gauge Co-op: 0.4 USDC
+       (1 EIP-7708 system log(s) present; same funds, not added)
+OK   block 69864001 verifier withdraws credited USDC
+       https://explorer.testnet.arc.io/tx/0x2a23272c85b3649027263c46d8030d23973a08db38eb6fb27317f780a9e7731c
+       USDC ERC-20 Transfer: MissionEscrow -> Verifier agent: 0.05 USDC
+       (1 EIP-7708 system log(s) present; same funds, not added)
+onchain status Settled, outcome ProviderPaid, refundAmount 0
+
+=== balances now (ERC-20 view, 6 decimals)
+Operator (demo key, server-held)         15.08316 USDC
+Buyer agent (vault executor)             0.419731 USDC
+Provider A: Delta Gauge Co-op            1.066098 USDC
+Provider B: Paddy Scout Network          0.282182 USDC
+Verifier agent                           0.807142 USDC
+Human arbiter (demo key, server-held)    0.19776 USDC
+MissionEscrow                            0 USDC held; liabilities 0
+
+all receipts succeeded

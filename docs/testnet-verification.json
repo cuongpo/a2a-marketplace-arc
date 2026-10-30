@@ -1,0 +1,388 @@
+[
+  {
+    "id": "e20c735e",
+    "onchainId": "1",
+    "tile": "B2",
+    "scenario": "accept",
+    "txs": [
+      {
+        "label": "buyer agent funds mission from vault",
+        "hash": "0x83ef0ad3b8874b6710b823a5ecdc3c88d057f293ff06424c54c0edd055cb13a2",
+        "status": "success",
+        "block": "69860433",
+        "usdcTransfers": [
+          "AgentBudgetVault -> MissionEscrow: 0.45 USDC"
+        ],
+        "systemLogs": 1
+      },
+      {
+        "label": "provider accepts assignment",
+        "hash": "0x2b614c96912a4147e01f9b789deb3b3c3f9344d559f379b236424d738925288c",
+        "status": "success",
+        "block": "69860442",
+        "usdcTransfers": [],
+        "systemLogs": 0
+      },
+      {
+        "label": "provider submits evidence hash",
+        "hash": "0xfba6b6dad81c95d631d38966b7950aed88fe83b604eed57211b2c621573a4bc7",
+        "status": "success",
+        "block": "69860453",
+        "usdcTransfers": [],
+        "systemLogs": 0
+      },
+      {
+        "label": "verifier submits signed accept verdict",
+        "hash": "0x9224863584be73feb5ed0da718756fcfeb95a0b9bc1591b5b0826bc61025e636",
+        "status": "success",
+        "block": "69860462",
+        "usdcTransfers": [],
+        "systemLogs": 0
+      },
+      {
+        "label": "keeper finalizes after challenge window and credits payouts",
+        "hash": "0x3ae0b0818dbc60e672e7143575e6eb1ba530eac404342d16d5dcc402780ddf05",
+        "status": "success",
+        "block": "69860532",
+        "usdcTransfers": [],
+        "systemLogs": 0
+      },
+      {
+        "label": "vault reconciles settlement and restores refund to operator budget",
+        "hash": "0x42325f2d629ffa35e614a4f8238e9f6daad8fed742eb611c97796d975fe47a36",
+        "status": "success",
+        "block": "69860541",
+        "usdcTransfers": [],
+        "systemLogs": 0
+      },
+      {
+        "label": "provider withdraws credited USDC",
+        "hash": "0xf8d6e66acc0356aac278904a030be37c64a3d7330daf25dfdcfc06b530e90126",
+        "status": "success",
+        "block": "69860549",
+        "usdcTransfers": [
+          "MissionEscrow -> Provider A: Delta Gauge Co-op: 0.4 USDC"
+        ],
+        "systemLogs": 1
+      },
+      {
+        "label": "verifier withdraws credited USDC",
+        "hash": "0x5e30f3a971240cbce381e5f5f775cd758a3bc5692b7da8c6cf4cecc165c87c93",
+        "status": "success",
+        "block": "69860558",
+        "usdcTransfers": [
+          "MissionEscrow -> Verifier agent: 0.05 USDC"
+        ],
+        "systemLogs": 1
+      }
+    ],
+    "onchain": {
+      "status": "Settled",
+      "outcome": "ProviderPaid"
+    }
+  },
+  {
+    "id": "2ab0f2f7",
+    "onchainId": "2",
+    "tile": "C3",
+    "scenario": "reject",
+    "txs": [
+      {
+        "label": "buyer agent funds mission from vault",
+        "hash": "0xebe9818b0cb673c9e705516dbd289958d40eeffb726c0415de65318c81ff91cd",
+        "status": "success",
+        "block": "69860581",
+        "usdcTransfers": [
+          "AgentBudgetVault -> MissionEscrow: 0.65 USDC"
+        ],
+        "systemLogs": 1
+      },
+      {
+        "label": "provider accepts assignment",
+        "hash": "0xea88fed8162d8ba797131e5b90049da1098864f5b9b4bbddbcb8a7f0b592cacc",
+        "status": "success",
+        "block": "69860591",
+        "usdcTransfers": [],
+        "systemLogs": 0
+      },
+      {
+        "label": "provider submits evidence hash",
+        "hash": "0x2f75a59134ebbb5a2a2c1fd1d4878aa3bb6bfd302181956cb4ec484765a6b2e8",
+        "status": "success",
+        "block": "69860600",
+        "usdcTransfers": [],
+        "systemLogs": 0
+      },
+      {
+        "label": "verifier submits signed reject verdict",
+        "hash": "0xa8b8ed1c0e7622dff79d35c2315619fc5533ae2182436afae98da171070e7e59",
+        "status": "success",
+        "block": "69860610",
+        "usdcTransfers": [],
+        "systemLogs": 0
+      },
+      {
+        "label": "keeper finalizes after challenge window and credits payouts",
+        "hash": "0xe97e83065c258a596c96b1e8940421a77175e60ebf76ef5f99e25d4f65355195",
+        "status": "success",
+        "block": "69860674",
+        "usdcTransfers": [],
+        "systemLogs": 0
+      },
+      {
+        "label": "vault reconciles settlement and restores refund to operator budget",
+        "hash": "0x1dd3bfb7db26a242d97b782481e1973ed542d6b706d41c0d6b7c06961586a9dc",
+        "status": "success",
+        "block": "69860684",
+        "usdcTransfers": [
+          "MissionEscrow -> AgentBudgetVault: 0.6 USDC"
+        ],
+        "systemLogs": 1
+      },
+      {
+        "label": "verifier withdraws credited USDC",
+        "hash": "0x609c5e7364665f6c362b630c4cbbfb31b96cab59c476aaf1820b83843f21274c",
+        "status": "success",
+        "block": "69860692",
+        "usdcTransfers": [
+          "MissionEscrow -> Verifier agent: 0.05 USDC"
+        ],
+        "systemLogs": 1
+      }
+    ],
+    "onchain": {
+      "status": "Settled",
+      "outcome": "BuyerRefunded"
+    }
+  },
+  {
+    "id": "dcdd6a3e",
+    "onchainId": "3",
+    "tile": "D1",
+    "scenario": "dispute",
+    "txs": [
+      {
+        "label": "buyer agent funds mission from vault",
+        "hash": "0x5f17bd764d9a475d2c5b3b58129fbf6510c137bc6694706ddc320e945bf5f3a9",
+        "status": "success",
+        "block": "69860743",
+        "usdcTransfers": [
+          "AgentBudgetVault -> MissionEscrow: 0.45 USDC"
+        ],
+        "systemLogs": 1
+      },
+      {
+        "label": "provider accepts assignment",
+        "hash": "0x307c4609ceb7ef5a49f59ff70b26a82de6e0824aa0ce3ca9ac4fba97efffda74",
+        "status": "success",
+        "block": "69860753",
+        "usdcTransfers": [],
+        "systemLogs": 0
+      },
+      {
+        "label": "provider submits evidence hash",
+        "hash": "0x71022b6a31fed71db77cfc6749860278ef0d90176b3a417cabe14114591a90b1",
+        "status": "success",
+        "block": "69860772",
+        "usdcTransfers": [],
+        "systemLogs": 0
+      },
+      {
+        "label": "verifier submits signed escalate verdict",
+        "hash": "0x50d152a0297d5ca7a4be0acd9010960b8818be190413ef25feb6cc1f21f2509e",
+        "status": "success",
+        "block": "69860782",
+        "usdcTransfers": [],
+        "systemLogs": 0
+      },
+      {
+        "label": "arbiter rules for buyer",
+        "hash": "0x0990774ac8f6d1bb2bc09df615e5028ea4954b1a2c19bee3fdc7ca931764aa0a",
+        "status": "success",
+        "block": "69860798",
+        "usdcTransfers": [],
+        "systemLogs": 0
+      },
+      {
+        "label": "vault reconciles settlement and restores refund to operator budget",
+        "hash": "0x235535b21f731f334a80ceb856646c1d62efbe12c1b5c0a5ed62d06d0bdeb047",
+        "status": "success",
+        "block": "69860802",
+        "usdcTransfers": [
+          "MissionEscrow -> AgentBudgetVault: 0.4 USDC"
+        ],
+        "systemLogs": 1
+      },
+      {
+        "label": "verifier withdraws credited USDC",
+        "hash": "0x320a7484c3b1ae4fb8806dfc339769ab2b38c653ebef658ce762ee3bcc973edb",
+        "status": "success",
+        "block": "69860806",
+        "usdcTransfers": [
+          "MissionEscrow -> Verifier agent: 0.05 USDC"
+        ],
+        "systemLogs": 1
+      }
+    ],
+    "onchain": {
+      "status": "Settled",
+      "outcome": "BuyerRefunded"
+    }
+  },
+  {
+    "id": "de02363a",
+    "onchainId": "4",
+    "tile": "E2",
+    "scenario": "reject",
+    "txs": [
+      {
+        "label": "buyer agent funds mission from vault",
+        "hash": "0xc34aaf33d2ae51b2eb8cc93082317c16235576efc9dd0af443c19f5ecd5aa47b",
+        "status": "success",
+        "block": "69860899",
+        "usdcTransfers": [
+          "AgentBudgetVault -> MissionEscrow: 0.35 USDC"
+        ],
+        "systemLogs": 1
+      },
+      {
+        "label": "provider accepts assignment",
+        "hash": "0x41db26bb4360f4568d008aa360ae96608aa4233c28a18c9e59b27ca562db2ce0",
+        "status": "success",
+        "block": "69860910",
+        "usdcTransfers": [],
+        "systemLogs": 0
+      },
+      {
+        "label": "provider submits evidence hash",
+        "hash": "0xd01fac50bb1338569972ef87984a9cb74ceed19d6be532f6ffbd29aa0dbdf941",
+        "status": "success",
+        "block": "69860919",
+        "usdcTransfers": [],
+        "systemLogs": 0
+      },
+      {
+        "label": "verifier submits signed reject verdict",
+        "hash": "0xf2db3e2cf4ad318afae2af8bff53481c97414c70b8e4f2d0ab421f27cc0fa113",
+        "status": "success",
+        "block": "69860929",
+        "usdcTransfers": [],
+        "systemLogs": 0
+      },
+      {
+        "label": "keeper finalizes after challenge window and credits payouts",
+        "hash": "0x62264b1ecf1b852bd31932f443bddc3dd3b809f05292261cc8d6ffd617d46742",
+        "status": "success",
+        "block": "69860992",
+        "usdcTransfers": [],
+        "systemLogs": 0
+      },
+      {
+        "label": "vault reconciles settlement and restores refund to operator budget",
+        "hash": "0xb29ddee70f6d5c6388b7ea0cd09e6bb7ad9648fc6dcb939a025947641e2f6d97",
+        "status": "success",
+        "block": "69861002",
+        "usdcTransfers": [
+          "MissionEscrow -> AgentBudgetVault: 0.3 USDC"
+        ],
+        "systemLogs": 1
+      },
+      {
+        "label": "verifier withdraws credited USDC",
+        "hash": "0xafa023579f235f6a0934b5c65600ef0b13d5a0bf05bd8823ffbff3719b9bdebe",
+        "status": "success",
+        "block": "69861011",
+        "usdcTransfers": [
+          "MissionEscrow -> Verifier agent: 0.05 USDC"
+        ],
+        "systemLogs": 1
+      }
+    ],
+    "onchain": {
+      "status": "Settled",
+      "outcome": "BuyerRefunded"
+    }
+  },
+  {
+    "id": "6308814e",
+    "onchainId": "5",
+    "tile": "F1",
+    "scenario": "accept",
+    "txs": [
+      {
+        "label": "buyer agent funds mission from vault",
+        "hash": "0x9225fbb41161dce92048845a0c8e26a8b29de8c6c6fff7aaebf5510c0b1740ab",
+        "status": "success",
+        "block": "69863876",
+        "usdcTransfers": [
+          "AgentBudgetVault -> MissionEscrow: 0.45 USDC"
+        ],
+        "systemLogs": 1
+      },
+      {
+        "label": "provider accepts assignment",
+        "hash": "0x02062b9e022b4e5711959e551a547182ea1efb60bc6146dced713012f2aefdd3",
+        "status": "success",
+        "block": "69863885",
+        "usdcTransfers": [],
+        "systemLogs": 0
+      },
+      {
+        "label": "provider submits evidence hash",
+        "hash": "0x62938b0925cc243a237ec3f62a830ea2178e92aacd3db1b92aa635e1070c4593",
+        "status": "success",
+        "block": "69863895",
+        "usdcTransfers": [],
+        "systemLogs": 0
+      },
+      {
+        "label": "verifier submits signed accept verdict",
+        "hash": "0x2f8af8bbd1797855f8f0f106e703791962966d76cd5273900f3294984bd4a900",
+        "status": "success",
+        "block": "69863905",
+        "usdcTransfers": [],
+        "systemLogs": 0
+      },
+      {
+        "label": "keeper finalizes after challenge window and credits payouts",
+        "hash": "0x0d9f4328913201951220fd9ae8fa3a397d4c43562980c8bb0770a2c55726529e",
+        "status": "success",
+        "block": "69863974",
+        "usdcTransfers": [],
+        "systemLogs": 0
+      },
+      {
+        "label": "vault reconciles settlement and restores refund to operator budget",
+        "hash": "0xc9be51df0d75dd9cbf480484bdf1f1fc04097e2e1b43ee12ed0ff0bb5d54a0d2",
+        "status": "success",
+        "block": "69863984",
+        "usdcTransfers": [],
+        "systemLogs": 0
+      },
+      {
+        "label": "provider withdraws credited USDC",
+        "hash": "0x284a1cf3ee790ed81acc0b2711965986857b2395afa92e5fcf3fc57c110124be",
+        "status": "success",
+        "block": "69863992",
+        "usdcTransfers": [
+          "MissionEscrow -> Provider A: Delta Gauge Co-op: 0.4 USDC"
+        ],
+        "systemLogs": 1
+      },
+      {
+        "label": "verifier withdraws credited USDC",
+        "hash": "0x2a23272c85b3649027263c46d8030d23973a08db38eb6fb27317f780a9e7731c",
+        "status": "success",
+        "block": "69864001",
+        "usdcTransfers": [
+          "MissionEscrow -> Verifier agent: 0.05 USDC"
+        ],
+        "systemLogs": 1
+      }
+    ],
+    "onchain": {
+      "status": "Settled",
+      "outcome": "ProviderPaid"
+    }
+  }
+]
