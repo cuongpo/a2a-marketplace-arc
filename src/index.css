@@ -46,6 +46,22 @@ body {
 .mono {
   font-family: 'JetBrains Mono', Menlo, monospace;
 }
+.farm-app-header {
+  border-bottom: 1px solid rgba(166, 206, 175, .12);
+}
+.farm-brand-icon {
+  border: 2px solid #8bb478;
+  border-radius: 5px;
+  background: #234c3e;
+  box-shadow: 3px 3px 0 #0d1722;
+}
+.farm-brand-icon img { image-rendering: pixelated; }
+.farm-brand-name {
+  color: #f4e3ab;
+  font-family: 'Pixelify Sans', Menlo, monospace;
+  letter-spacing: .02em;
+  font-size: 25px;
+}
 .num {
   font-variant-numeric: tabular-nums;
 }

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ConnectKitButton } from 'connectkit'
-import { Compass } from 'lucide-react'
 import { navigate, useApi, type Overview, type PMission, type TileCell } from '@/lib/api'
 import { EventFeed } from '@/components/EventFeed'
 import { FieldGrid } from '@/components/FieldGrid'
@@ -25,8 +24,9 @@ function usePath() {
 function MissionControl({ ov }: { ov: Overview | null }) {
   const tiles = useApi<TileCell[]>('/tiles', 3000)
   const missions = useApi<PMission[]>('/missions', 3000)
-  const [selected, setSelected] = useState<string | null>(null)
+  const [pickedTile, setPickedTile] = useState<string | null>(null)
   const [tab, setTab] = useState<'mission' | 'vault'>('mission')
+  const selected = pickedTile ?? ([...(missions.data ?? [])].sort((a, b) => b.createdAt - a.createdAt)[0]?.spec.tile || null)
 
   const cells = tiles.data ?? []
   const cell = cells.find((c) => c.tile === selected)
@@ -42,16 +42,19 @@ function MissionControl({ ov }: { ov: Overview | null }) {
 
   const panelRef = useRef<HTMLDivElement>(null)
   const pick = (t: string) => {
-    setSelected(t)
+    setPickedTile(t)
     setTab('mission')
     // On narrow screens the detail panel sits below the board: bring it into view.
     if (window.matchMedia('(max-width: 1023px)').matches) setTimeout(() => panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60)
   }
 
   return (
-    <main className="mx-auto grid w-full max-w-7xl gap-4 px-3 py-4 sm:px-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:items-start">
-      <div className="space-y-4">{tiles.error && !tiles.data ? <Empty title="Field grid unavailable">{tiles.error}</Empty> : <FieldGrid cells={cells} selected={selected} onSelect={pick} />}</div>
-      <div ref={panelRef} className="scroll-mt-3 space-y-4 lg:row-span-2">
+    <main className="mx-auto grid w-full max-w-[1600px] gap-4 px-3 py-4 sm:px-5 lg:grid-cols-[minmax(0,1.8fr)_minmax(350px,1fr)] lg:items-start">
+      <div className="min-w-0 space-y-4">
+        {tiles.error && !tiles.data ? <Empty title="Field grid unavailable">{tiles.error}</Empty> : <FieldGrid cells={cells} selected={selected} onSelect={pick} />}
+        <div className="hidden lg:block"><EventFeed ov={ov} /></div>
+      </div>
+      <div ref={panelRef} className="min-w-0 scroll-mt-3 space-y-4">
         <div role="tablist" aria-label="Panels" className="flex gap-2">
           {(['mission', 'vault'] as const).map((t) => (
             <button key={t} role="tab" aria-selected={tab === t} type="button" className={`btn ${tab === t ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setTab(t)}>
@@ -91,9 +94,7 @@ function MissionControl({ ov }: { ov: Overview | null }) {
         ) : (
           <Empty title="Loading tile">Waiting for the grid.</Empty>
         )}
-      </div>
-      <div className="space-y-4">
-        <EventFeed ov={ov} />
+        <div className="lg:hidden"><EventFeed ov={ov} /></div>
       </div>
     </main>
   )
@@ -107,13 +108,13 @@ export default function App() {
   return (
     <div className="min-h-dvh">
       <ModeBanner ov={ov} error={error} />
-      <header className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-3 px-3 py-3 sm:px-5">
+      <header className="farm-app-header mx-auto flex w-full max-w-[1600px] flex-wrap items-center justify-between gap-3 px-3 py-3 sm:px-5">
         <button type="button" className="flex items-center gap-2 text-left" onClick={() => navigate('/')} aria-label="FieldQuest mission control">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-white/5">
-            <Compass size={20} aria-hidden />
+          <span className="farm-brand-icon flex h-10 w-10 items-center justify-center" aria-hidden="true">
+            <img src="/assets/kenney-tiny-farm/tiles/tile_0066.png" width="29" height="29" alt="" />
           </span>
           <span>
-            <span className="display block text-xl font-bold leading-none">FieldQuest</span>
+            <span className="farm-brand-name block text-xl font-bold leading-none">FieldQuest</span>
             <span className="block text-[11px] text-[var(--subtle)]">verified field observations, paid in USDC on Arc</span>
           </span>
         </button>

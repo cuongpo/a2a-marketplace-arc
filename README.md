@@ -20,6 +20,8 @@ Built with [Arc Studio](https://studio.arc.io)
 
 Vite, React, TypeScript, Tailwind, wagmi + viem, framer-motion. Solidity 0.8.28 with OpenZeppelin and Foundry. A Bun backend runs the buyer, provider, verifier and settlement workers with persisted, idempotent jobs.
 
+The field map uses [Kenney Tiny Farm](https://kenney.nl/assets/tiny-farm) pixel art under CC0. A copy of its license is in `public/assets/kenney-tiny-farm/License.txt`. Plot overlays, mission status, and scout movement are FieldQuest UI code; the art does not represent physical survey data.
+
 ## Development
 
 Prerequisites: Bun, Foundry (`forge`). Optional: Arc Foundry (`arc-forge`) for Arc-specific testing.
