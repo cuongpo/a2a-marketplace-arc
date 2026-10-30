@@ -42,14 +42,14 @@ function Plot({ cell, x, y, selected, onSelect }: { cell: TileCell; x: number; y
       <rect x={x + 4} y={y + 6} width={PW} height={PH} fill="#334b3b" opacity=".65" />
       <rect x={x} y={y} width={PW} height={PH} fill={variant % 2 ? '#79af6e' : '#8bb36f'} stroke={selected ? '#fff6c7' : '#54744c'} strokeWidth={selected ? 4 : 2} />
       <rect x={x + 6} y={y + 6} width={PW - 12} height={PH - 12} fill="url(#farm-soil)" opacity=".88" />
-      {[0, 1, 2].flatMap((col) => [0, 1].map((row) => <Sprite key={`${col}-${row}`} n={cropFor[variant]} x={x + 11 + col * 30} y={y + 14 + row * 33} size={28} />))}
+      {[0, 1, 2].flatMap((col) => [0, 1].map((row) => <g key={`${col}-${row}`} className={cell.state === 'revealed' || cell.state === 'active' ? 'farm-crop' : undefined} style={{ animationDelay: `${(col * 2 + row + variant) * -.31}s` }}><Sprite n={cropFor[variant]} x={x + 11 + col * 30} y={y + 14 + row * 33} size={28} /></g>))}
       {cell.state === 'fog' ? <>
         <rect x={x + 1} y={y + 1} width={PW - 2} height={PH - 2} fill="#142939" opacity=".81" />
         <g className="farm-fog" fill="#bdcbd0" opacity=".42"><rect x={x + 16} y={y + 37} width="41" height="10" /><rect x={x + 24} y={y + 31} width="25" height="8" /><rect x={x + 55} y={y + 55} width="34" height="8" /></g>
       </> : null}
-      {bad ? <rect x={x + 1} y={y + 1} width={PW - 2} height={PH - 2} fill="url(#farm-refund)" opacity=".87" /> : null}
-      {cell.state === 'active' ? <rect className="farm-pulse" x={x + 2} y={y + 2} width={PW - 4} height={PH - 4} fill="none" stroke="#ffe394" strokeWidth="4" /> : null}
-      {cell.state === 'revealed' ? <rect x={x + 2} y={y + 2} width={PW - 4} height={PH - 4} fill="none" stroke="#dcf8a4" strokeWidth="4" /> : null}
+      {bad ? <rect className="farm-refund-shade" x={x + 1} y={y + 1} width={PW - 2} height={PH - 2} fill="url(#farm-refund)" opacity=".87" /> : null}
+      {cell.state === 'active' ? <><rect className="farm-pulse" x={x + 2} y={y + 2} width={PW - 4} height={PH - 4} fill="none" stroke="#ffe394" strokeWidth="4" /><g className="farm-scan-beam"><rect x={x + 5} y={y + 5} width="6" height={PH - 10} fill="#fff0a8" opacity=".55" /></g></> : null}
+      {cell.state === 'revealed' ? <><rect x={x + 2} y={y + 2} width={PW - 4} height={PH - 4} fill="none" stroke="#dcf8a4" strokeWidth="4" /><g className="farm-paid-sparkle" aria-hidden="true"><rect x={x + PW - 18} y={y + 27} width="4" height="17" fill="#fff9bd" /><rect x={x + PW - 25} y={y + 34} width="18" height="4" fill="#fff9bd" /></g></> : null}
       <rect x={x + 6} y={y + 6} width="32" height="20" fill="#18303a" opacity=".91" />
       <text x={x + 11} y={y + 21} className="farm-plot-id">{cell.tile}</text>
       {cell.value !== undefined ? <>
@@ -102,16 +102,19 @@ export function FieldGrid({ cells, selected, onSelect }: { cells: TileCell[]; se
           </defs>
           <rect width="960" height="690" fill="url(#farm-grass)" />
           <rect x="15" width="66" height="690" fill="url(#farm-water)" /><rect y="629" width="960" height="61" fill="url(#farm-water)" />
+          <g className="farm-water-shimmer" fill="#d6f6dc" opacity=".7" aria-hidden="true"><rect x="35" y="34" width="23" height="4" /><rect x="49" y="192" width="17" height="4" /><rect x="28" y="382" width="26" height="4" /><rect x="43" y="545" width="16" height="4" /><rect x="160" y="652" width="27" height="4" /><rect x="415" y="667" width="21" height="4" /><rect x="744" y="648" width="30" height="4" /></g>
           <path d="M91 0V635M94 137H859M94 248H859M94 359H859M94 470H859M94 581H859" stroke="#a76545" strokeWidth="14" /><path d="M91 0V635M94 137H859M94 248H859M94 359H859M94 470H859M94 581H859" stroke="#d79861" strokeWidth="9" strokeDasharray="9 5" />
           <rect x="19" y="119" width="65" height="20" fill="#a57450" stroke="#704c3f" strokeWidth="3" /><rect x="19" y="572" width="65" height="20" fill="#a57450" stroke="#704c3f" strokeWidth="3" />
           {[3, 15, 27, 39, 3, 27].map((n, i) => <Sprite key={`tree-l-${i}`} n={n} x={i % 2 ? 4 : 831} y={155 + Math.floor(i / 2) * 157} size={53} />)}
           {[77, 78, 79, 80, 81, 83].map((n, i) => <Sprite key={`deco-${i}`} n={n} x={167 + i * 104} y={26 + (i % 2) * 12} size={35} />)}
           <Sprite n={72} x={255} y={52} size={39} /><Sprite n={73} x={293} y={52} size={39} /><Sprite n={96} x={845} y={494} size={40} /><Sprite n={97} x={872} y={494} size={40} />
           <g aria-hidden="true">{[90, 91, 92, 102, 103, 104, 114, 115, 116].map((n, i) => <Sprite key={`barn-${n}`} n={n} x={716 + (i % 3) * 35} y={4 + Math.floor(i / 3) * 35} size={35} />)}<text x="768" y="125" textAnchor="middle" className="farm-building-label">PROVIDER BARN</text></g>
+          <g className="farm-sheep" aria-hidden="true"><Sprite n={120} x={596} y={41} size={35} /></g>
+          <g className="farm-chicken" aria-hidden="true"><Sprite n={122} x={214} y={91} size={31} /></g>
           {ROWS.flatMap((r) => COLS.map((c, col) => { const tile = `${c}${r}`; const cell = by.get(tile); const x = X0 + col * DX; const y = Y0 + (r - 1) * DY; return cell ? <Plot key={tile} cell={cell} x={x} y={y} selected={selected === tile} onSelect={onSelect} /> : <g key={tile} aria-hidden="true"><rect x={x} y={y} width={PW} height={PH} fill="#243a3f" opacity=".88" /><text x={x + 10} y={y + 21} className="farm-plot-id">{tile}</text><text x={x + 10} y={y + PH - 13} className="farm-status">SYNC</text></g> }))}
-          <Sprite n={109} x={367} y={93} size={43} /><text x="390" y="86" textAnchor="middle" className="farm-agent-label">BUYER</text>
-          <Sprite n={108} x={569} y={93} size={43} /><text x="591" y="86" textAnchor="middle" className="farm-agent-label">VERIFIER</text>
-          {showScout ? <g className="farm-scout" style={{ transform: `translate(${scoutX}px, ${scoutY}px)` }} aria-hidden="true"><image href={asset(109)} x="-22" y="-38" width="44" height="44" imageRendering="pixelated" /><text y="-45" textAnchor="middle" className="farm-agent-label">{selected ?? 'SCOUT'}</text></g> : null}
+          <g className="farm-agent-idle" aria-hidden="true"><Sprite n={109} x={367} y={93} size={43} /><text x="390" y="86" textAnchor="middle" className="farm-agent-label">BUYER</text></g>
+          <g className="farm-agent-idle farm-agent-idle-delayed" aria-hidden="true"><Sprite n={108} x={569} y={93} size={43} /><text x="591" y="86" textAnchor="middle" className="farm-agent-label">VERIFIER</text></g>
+          {showScout ? <g className="farm-scout-x" style={{ transform: `translateX(${scoutX}px)` }} aria-hidden="true"><g className="farm-scout-y" style={{ transform: `translateY(${scoutY}px)` }}><g className="farm-scout-bob"><image href={asset(109)} x="-22" y="-38" width="44" height="44" imageRendering="pixelated" /><text y="-45" textAnchor="middle" className="farm-agent-label">{selected ?? 'SCOUT'}</text></g></g></g> : null}
           <g aria-hidden="true"><rect x="110" y="605" width="219" height="49" fill="#223c39" stroke="#f2d188" strokeWidth="3" /><text x="123" y="625" className="farm-sign-title">FIELDQUEST</text><text x="123" y="643" className="farm-sign-sub">AGENT COMMERCE / ARC</text></g>
         </svg>
       </div>

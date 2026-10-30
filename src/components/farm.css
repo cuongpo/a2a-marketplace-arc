@@ -45,6 +45,7 @@
   height: 8px;
   background: #a4dc99;
   box-shadow: 0 0 0 4px #a4dc9925, 0 0 15px #a4dc99a0;
+  animation: farm-live 2.4s ease-in-out infinite;
 }
 
 .farm-title {
@@ -138,11 +139,31 @@
 .farm-agent-label, .farm-building-label { fill: #fff9d7; paint-order: stroke; stroke: #233540; stroke-width: 4px; font-size: 13px; }
 .farm-sign-title { fill: #ffe293; font-size: 19px; }
 .farm-sign-sub { fill: #c7e5bf; font-size: 12px; }
-.farm-scout { transition: transform .55s steps(8, end); }
+.farm-scout-x { transition: transform .8s steps(12, end); }
+.farm-scout-y { transition: transform .65s steps(9, end) .8s; }
+.farm-scout-bob { animation: farm-idle .42s steps(2, end) infinite alternate; }
+.farm-agent-idle { animation: farm-idle 1.5s steps(2, end) infinite alternate; }
+.farm-agent-idle-delayed { animation-delay: -.7s; }
+.farm-sheep { animation: farm-wander 6s steps(12, end) infinite alternate; }
+.farm-chicken { animation: farm-peck 2.3s steps(3, end) infinite; }
+.farm-water-shimmer { animation: farm-flow 3s steps(8, end) infinite; }
+.farm-crop { animation: farm-sway 2.5s steps(3, end) infinite alternate; transform-box: fill-box; transform-origin: center bottom; }
+.farm-paid-sparkle { animation: farm-glint 1.8s steps(4, end) infinite; transform-box: fill-box; transform-origin: center; }
+.farm-refund-shade { animation: farm-warning 3s ease-in-out infinite; }
+.farm-scan-beam { animation: farm-scan 2.3s steps(12, end) infinite alternate; }
 .farm-fog { animation: farm-drift 4s ease-in-out infinite alternate; }
 .farm-pulse { animation: farm-beacon 2.2s ease-in-out infinite; }
 
-@keyframes farm-drift { from { opacity: .35; } to { opacity: .72; } }
+@keyframes farm-live { 0%, 100% { box-shadow: 0 0 0 4px #a4dc9925, 0 0 10px #a4dc9980; } 50% { box-shadow: 0 0 0 7px #a4dc9910, 0 0 18px #a4dc99e0; } }
+@keyframes farm-idle { from { transform: translateY(0); } to { transform: translateY(-3px); } }
+@keyframes farm-wander { 0% { transform: translateX(0); } 45% { transform: translateX(43px); } 55% { transform: translateX(43px); } 100% { transform: translateX(0); } }
+@keyframes farm-peck { 0%, 45%, 100% { transform: translateY(0); } 55%, 70% { transform: translateY(4px); } }
+@keyframes farm-flow { from { transform: translateY(0); opacity: .3; } to { transform: translateY(40px); opacity: .8; } }
+@keyframes farm-sway { from { transform: rotate(-3deg) translateX(-1px); } to { transform: rotate(3deg) translateX(1px); } }
+@keyframes farm-glint { 0%, 18%, 100% { opacity: 0; transform: scale(.5); } 25%, 55% { opacity: 1; transform: scale(1); } 65% { opacity: .35; transform: scale(1.2); } }
+@keyframes farm-warning { 0%, 100% { opacity: .8; } 50% { opacity: .98; } }
+@keyframes farm-scan { from { transform: translateX(0); opacity: .2; } to { transform: translateX(93px); opacity: .8; } }
+@keyframes farm-drift { from { opacity: .3; transform: translateX(-5px); } to { opacity: .7; transform: translateX(5px); } }
 @keyframes farm-beacon { 0%, 100% { stroke-opacity: 1; } 50% { stroke-opacity: .25; } }
 
 .farm-footer { padding: 11px 17px 13px; border-top: 3px solid #0c3031; background: #18333c; }
@@ -165,6 +186,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .farm-fog, .farm-pulse { animation: none; }
-  .farm-scout { transition: none; }
+  .farm-fog, .farm-pulse, .farm-live-dot, .farm-scout-bob, .farm-agent-idle, .farm-sheep, .farm-chicken, .farm-water-shimmer, .farm-crop, .farm-paid-sparkle, .farm-refund-shade, .farm-scan-beam { animation: none; }
+  .farm-scout-x, .farm-scout-y { transition: none; }
 }
