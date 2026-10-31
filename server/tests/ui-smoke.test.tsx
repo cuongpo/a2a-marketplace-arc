@@ -70,6 +70,25 @@ describe('UI render smoke (structure only, no live data)', () => {
     expect(settled).toContain('Escrow: 0.4 USDC paid to provider.')
     expect(renderToStaticMarkup(<TradeFloor onOpenDetails={() => undefined} mission={{ ...pending, onchain: { status: 'Settled', outcome: 'Split' } as never }} />)).toContain('SPLIT SETTLEMENT')
   })
+  test('trading floor gives each signed provider a selectable bid and marks the actual winner', () => {
+    const first: PMission['quotes'][number] = {
+      quoteId: 'bid-one', provider: '0x0000000000000000000000000000000000000003', providerName: 'Alpha Data',
+      priceUsdc: '400000', etaSec: 600, evidenceCapability: 'signed-device', validUntil: 100,
+      tileId: `0x${'1'.repeat(64)}`, specHash: `0x${'1'.repeat(64)}`, signature: `0x${'a'.repeat(130)}`, simulated: false,
+    }
+    const second: PMission['quotes'][number] = { ...first, quoteId: 'bid-two', provider: '0x0000000000000000000000000000000000000004', providerName: 'Beta Sensor', priceUsdc: '550000', signature: `0x${'b'.repeat(130)}` }
+    const scored = (quote: PMission['quotes'][number], score: number) => ({ quote, score, parts: { price: .5, capability: .5, reliability: .5, deadline: .5 } })
+    const mission: PMission = { ...pending, quotes: [first, second], decision: { chosenQuoteId: second.quoteId, scored: [scored(first, .4), scored(second, .8)], rationale: 'Beta has stronger reliability', at: 1 } }
+    const html = renderToStaticMarkup(<TradeFloor mission={mission} onOpenDetails={() => undefined} />)
+    expect(html).toContain('2 signed bids · winner selected')
+    expect(html).toContain('Alpha Data')
+    expect(html).toContain('Beta Sensor')
+    expect(html).toContain('0.55 USDC')
+    expect(html).toContain('Selected winner')
+    expect(html).toContain('Score 0.800')
+    expect(html).toContain('Inspect signature')
+    expect(html).not.toContain('ARC TRADE PROOF')
+  })
   test('mode banner distinguishes unreachable backend and shows no data', () => {
     expect(renderToStaticMarkup(<ModeBanner ov={null} error="boom" />)).toContain('Backend unreachable')
   })

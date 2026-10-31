@@ -5,8 +5,9 @@ type Role = 'buyer' | 'provider' | 'escrow' | 'verifier'
 type Direction = 'left' | 'up' | 'right' | 'down'
 type Point = { x: number; y: number }
 type Art = { room: HTMLImageElement; interiors: HTMLImageElement; idle: Record<string, HTMLImageElement>; run: Record<string, HTMLImageElement> }
-type SceneState = { phase: Phase; bids: number; escrowed: boolean; evidence: boolean; settled: boolean; outcome: string | null; speech: Record<Role, string> }
-type Motion = { positions: Record<Role, Point>; phase: Phase; phaseStart: number; lastFrame: number; mobile: boolean | null }
+export type FloorProvider = { id: string; name: string; price: string; etaMinutes: number; winner: boolean; excluded: boolean }
+type SceneState = { phase: Phase; providers: FloorProvider[]; selectedProviderId: string | null; onSelectProvider: (id: string | null) => void; escrowed: boolean; evidence: boolean; settled: boolean; outcome: string | null; speech: Record<Role, string> }
+type Motion = { positions: Record<string, Point>; phase: Phase; phaseStart: number; lastFrame: number; mobile: boolean | null; visibleIds: string }
 
 const BASE = '/assets/modern-tiles/'
 const PEOPLE = ['Adam', 'Amelia', 'Bob', 'Alex'] as const
@@ -63,8 +64,8 @@ function deskPod(ctx: CanvasRenderingContext2D, x: number, y: number, width: num
   ctx.fillRect(x + middle - 6, y + 45, 12, 4)
 }
 
-function nameplate(ctx: CanvasRenderingContext2D, role: Role, point: Point, active: boolean, roomHeight: number) {
-  const title = role === 'provider' ? 'Provider agent' : role === 'buyer' ? 'Buyer agent' : role === 'escrow' ? 'Escrow' : 'Verifier'
+function nameplate(ctx: CanvasRenderingContext2D, role: Role, point: Point, active: boolean, roomHeight: number, label?: string, winner = false) {
+  const title = label ? `${winner ? '★ ' : ''}${label.slice(0, 12)}` : role === 'provider' ? 'Provider agent' : role === 'buyer' ? 'Buyer agent' : role === 'escrow' ? 'Escrow' : 'Verifier'
   ctx.font = 'bold 9px sans-serif'
   const width = Math.ceil(ctx.measureText(title).width) + 24
   const x = Math.round(point.x - width / 2)
@@ -79,6 +80,17 @@ function nameplate(ctx: CanvasRenderingContext2D, role: Role, point: Point, acti
   ctx.fill()
   ctx.fillStyle = '#fffaf0'
   ctx.fillText(title, x + 17, y + 12)
+}
+
+function shownProviders(providers: FloorProvider[], selectedId: string | null, mobile: boolean): FloorProvider[] {
+  const capacity = mobile ? 2 : 3
+  const shown = providers.slice(0, capacity)
+  for (const essential of [providers.find((provider) => provider.winner), providers.find((provider) => provider.id === selectedId)]) {
+    if (!essential || shown.some((provider) => provider.id === essential.id)) continue
+    const replace = shown.findIndex((provider) => !provider.winner && provider.id !== selectedId)
+    shown[replace < 0 ? shown.length - 1 : replace] = essential
+  }
+  return shown.sort((a, b) => providers.indexOf(a) - providers.indexOf(b))
 }
 
 function path(points: Point[], progress: number): Point {
@@ -139,7 +151,7 @@ function fitMessage(ctx: CanvasRenderingContext2D, message: string, width: numbe
   return [first, `${second.trimEnd()}…`]
 }
 
-function drawBubble(ctx: CanvasRenderingContext2D, role: Role, message: string, center: number, top: number, width: number, active: boolean, roomWidth: number) {
+function drawBubble(ctx: CanvasRenderingContext2D, role: Role, message: string, center: number, top: number, width: number, active: boolean, roomWidth: number, label?: string) {
   const left = Math.max(8, Math.min(roomWidth - width - 8, Math.round(center - width / 2)))
   const height = 46
   const edge = active ? ROLE_COLOR[role] : '#627c85'
@@ -162,17 +174,17 @@ function drawBubble(ctx: CanvasRenderingContext2D, role: Role, message: string, 
   ctx.fillRect(pointer - 2, top + height, 5, 2)
   ctx.font = 'bold 9px monospace'
   ctx.fillStyle = '#455466'
-  ctx.fillText(role.toUpperCase(), left + 8, top + 12)
+  ctx.fillText((label ?? role).slice(0, 19).toUpperCase(), left + 8, top + 12)
   ctx.font = 'bold 11px monospace'
   ctx.fillStyle = '#212c39'
   fitMessage(ctx, message, width - 16).forEach((line, i) => ctx.fillText(line, left + 8, top + 27 + i * 11))
 }
 
-function room(ctx: CanvasRenderingContext2D, art: Art, width: number, height: number, mobile: boolean, state: SceneState, motion: Motion, focusedRole: Role | null, time: number, elapsed: number, delta: number, reducedMotion: boolean) {
+function room(ctx: CanvasRenderingContext2D, art: Art, width: number, height: number, mobile: boolean, state: SceneState, motion: Motion, focusedRole: string | null, time: number, elapsed: number, delta: number, reducedMotion: boolean) {
   ctx.clearRect(0, 0, width, height)
   ctx.imageSmoothingEnabled = false
   const { room: tiles, interiors: props } = art
-  const { phase, bids, escrowed, evidence, settled, outcome, speech } = state
+  const { phase, providers, selectedProviderId, escrowed, evidence, settled, outcome, speech } = state
   for (let x = 0; x < width; x += 16) {
     for (let y = 0; y < 64; y += 16) sprite(ctx, tiles, 64, y < 48 ? 144 + (y % 32) : 192, 16, 16, x, y)
     for (let y = 64; y < height; y += 16) sprite(ctx, tiles, 224, 144, 16, 16, x, y)
@@ -204,16 +216,12 @@ function room(ctx: CanvasRenderingContext2D, art: Art, width: number, height: nu
     furniture(ctx, props, 248, 8, 96, 0, 48, 48)
     furniture(ctx, props, 8, 370, 208, 704, 32, 48, 26, 39)
     furniture(ctx, props, 286, 370, 208, 704, 32, 48, 26, 39)
-    furniture(ctx, props, 137, 211, 48, 672, 48, 32, 46, 35)
-    furniture(ctx, props, 143, 218, 112, 208, 48, 32, 34, 18)
   } else {
     furniture(ctx, props, 83, 8, 96, 0, 48, 48)
     furniture(ctx, props, 296, 8, 96, 0, 48, 48)
     furniture(ctx, props, 509, 8, 96, 0, 48, 48)
     furniture(ctx, props, 10, 279, 176, 1104, 80, 48, 75, 43)
     furniture(ctx, props, 555, 279, 176, 1104, 80, 48, 75, 43)
-    furniture(ctx, props, 280, 190, 48, 672, 48, 32, 80, 60)
-    furniture(ctx, props, 293, 205, 112, 208, 48, 32, 54, 33)
     furniture(ctx, props, 14, 143, 208, 704, 32, 48)
     furniture(ctx, props, 594, 143, 208, 704, 32, 48)
   }
@@ -222,31 +230,56 @@ function room(ctx: CanvasRenderingContext2D, art: Art, width: number, height: nu
     deskPod(ctx, x, bottomDeskY, mobile ? 128 : 150)
   }
 
-  const move = (role: Role, target: Point) => {
-    const previous = motion.positions[role] ?? target
+  const visibleProviders = shownProviders(providers, selectedProviderId, mobile)
+  const providerSlots = mobile ? [206, 275] : [350, 453, 556]
+  const providerPoints = new Map(visibleProviders.map((provider, index) => [provider.id, { x: providerSlots[index], y: centers.top }]))
+  if (visibleProviders.length === 1) providerPoints.set(visibleProviders[0].id, point.provider)
+  const visibleIds = visibleProviders.map((provider) => provider.id).join('|')
+  if (motion.visibleIds !== visibleIds) {
+    if (phase !== 'quotes') visibleProviders.forEach((provider) => { motion.positions[`quote:${provider.id}`] = providerPoints.get(provider.id)! })
+    motion.visibleIds = visibleIds
+  }
+
+  const move = (key: string, role: Role, target: Point, arrive = false, arrivalIndex = 0) => {
+    if (!motion.positions[key] && arrive && phase === 'quotes' && !reducedMotion) motion.positions[key] = { x: width - 38 - arrivalIndex * 17, y: 260 }
+    const previous = motion.positions[key] ?? target
     const distance = Math.hypot(target.x - previous.x, target.y - previous.y)
     const weight = reducedMotion || distance === 0 ? 1 : Math.min(1 - Math.exp(-delta * 7), 75 * delta / distance)
     const current = { x: previous.x + (target.x - previous.x) * weight, y: previous.y + (target.y - previous.y) * weight }
-    motion.positions[role] = current
+    motion.positions[key] = current
     const dx = current.x - previous.x
     const dy = current.y - previous.y
     const moving = Math.hypot(dx, dy) > .12
     const direction: Direction = !moving ? 'down' : Math.abs(dy) > Math.abs(dx) ? (dy < 0 ? 'up' : 'down') : (dx < 0 ? 'left' : 'right')
-    return { role, at: current, moving, direction }
+    return { key, role, at: current, moving, direction }
   }
-  const buyer = move('buyer', phase === 'escrow' && !reducedMotion ? route(point.buyer, point.escrow, mobile, elapsed) : point.buyer)
-  const provider = move('provider', phase === 'quotes' && !reducedMotion ? route(point.provider, point.buyer, mobile, elapsed) : phase === 'delivery' && !reducedMotion ? route(point.provider, point.escrow, mobile, elapsed) : point.provider)
-  const escrow = move('escrow', point.escrow)
-  const verifier = move('verifier', phase === 'verdict' && !reducedMotion ? route(point.verifier, point.escrow, mobile, elapsed) : point.verifier)
-  const people = [buyer, provider, escrow, verifier]
-  people.sort((a, b) => a.at.y - b.at.y).forEach((person) => drawPerson(ctx, art, ROLE_PERSON[person.role], person.at, person.moving && !reducedMotion, person.direction, time, mobile))
-  const speaking: Role | null = focusedRole ?? (phase === 'request' ? 'buyer' : phase === 'quotes' || phase === 'delivery' ? 'provider' : phase === 'escrow' || phase === 'settlement' ? 'escrow' : phase === 'verdict' ? 'verifier' : settled ? 'escrow' : null)
-  people.forEach((person) => nameplate(ctx, person.role, person.at, person.role === speaking, height))
+  const buyer = move('buyer', 'buyer', phase === 'escrow' && !reducedMotion ? route(point.buyer, point.escrow, mobile, elapsed) : point.buyer)
+  const escrow = move('escrow', 'escrow', point.escrow)
+  const verifier = move('verifier', 'verifier', phase === 'verdict' && !reducedMotion ? route(point.verifier, point.escrow, mobile, elapsed) : point.verifier)
+  const providerPeople = visibleProviders.map((provider, index) => {
+    const base = providerPoints.get(provider.id)!
+    const target = provider.winner && phase === 'delivery' && !reducedMotion ? route(base, point.verifier, mobile, elapsed) : base
+    return move(`quote:${provider.id}`, 'provider', target, true, index)
+  })
+  const placeholder = providers.length ? null : move('provider', 'provider', point.provider)
+  const people = [buyer, ...providerPeople, ...(placeholder ? [placeholder] : []), escrow, verifier]
+  people.sort((a, b) => a.at.y - b.at.y).forEach((person) => {
+    const index = person.key.startsWith('quote:') ? providers.findIndex((provider) => `quote:${provider.id}` === person.key) : -1
+    drawPerson(ctx, art, index >= 0 ? PEOPLE[(index + 1) % PEOPLE.length] : ROLE_PERSON[person.role], person.at, person.moving && !reducedMotion, person.direction, time, mobile)
+  })
+  const defaultSpeaker = phase === 'request' ? 'buyer' : phase === 'quotes' || phase === 'delivery' ? visibleProviders[0] ? `quote:${visibleProviders[0].id}` : 'provider' : phase === 'escrow' || phase === 'settlement' ? 'escrow' : phase === 'verdict' ? 'verifier' : settled ? 'escrow' : null
+  const speaking = focusedRole && people.some((person) => person.key === focusedRole) ? focusedRole : selectedProviderId && people.some((person) => person.key === `quote:${selectedProviderId}`) ? `quote:${selectedProviderId}` : defaultSpeaker
+  people.forEach((person) => {
+    const provider = providers.find((quote) => `quote:${quote.id}` === person.key)
+    nameplate(ctx, person.role, person.at, person.key === speaking, height, provider?.name.slice(0, mobile ? 7 : 12), provider?.winner)
+  })
 
-  if (bids > 0) {
-    ctx.fillStyle = '#e8c573'
-    ctx.fillRect(point.provider.x + 12, point.provider.y - 30, 5, 5)
-  }
+  visibleProviders.forEach((provider) => {
+    const at = motion.positions[`quote:${provider.id}`]
+    if (!at) return
+    ctx.fillStyle = provider.winner ? '#f4d269' : provider.excluded ? '#c8827d' : '#78c9a9'
+    ctx.fillRect(Math.round(at.x + 10), Math.round(at.y - 34), 5, 5)
+  })
   if (escrowed) {
     ctx.globalAlpha = .78 + Math.sin(time * 2) * .14
     ctx.fillStyle = '#f5c86e'
@@ -258,25 +291,31 @@ function room(ctx: CanvasRenderingContext2D, art: Art, width: number, height: nu
     ctx.fillRect(point.verifier.x + 12, point.verifier.y - 31, 6, 6)
   }
   if (phase === 'settlement' && settled) {
-    const destination = outcome === 'ProviderPaid' ? point.provider : point.buyer
+    const winnerPoint = providers.find((provider) => provider.winner)
+    const destination = outcome === 'ProviderPaid' && winnerPoint ? providerPoints.get(winnerPoint.id) ?? point.provider : point.buyer
     const coin = route(point.escrow, destination, mobile, elapsed)
     ctx.fillStyle = '#f8d681'
     ctx.fillRect(Math.round(coin.x - 3), Math.round(coin.y - 31), 7, 7)
   }
   if (speaking) {
-    const upper = speaking === 'buyer' || speaking === 'provider'
-    drawBubble(ctx, speaking, speech[speaking], upper ? point[speaking].x : width / 2, upper ? topBubbleY : bottomBubbleY, upper ? bubbleWidth : mobile ? 140 : 150, true, width)
+    const person = people.find((entry) => entry.key === speaking)
+    const provider = providers.find((quote) => `quote:${quote.id}` === speaking)
+    const role = provider ? 'provider' : speaking as Role
+    const upper = role === 'buyer' || role === 'provider'
+    const message = provider ? `${provider.price} USDC · ETA ${provider.etaMinutes}m${provider.winner ? ' · WINNER' : provider.excluded ? ' · EXCLUDED' : ''}` : speech[role]
+    drawBubble(ctx, role, message, person?.at.x ?? width / 2, upper ? topBubbleY : bottomBubbleY, upper ? bubbleWidth : mobile ? 140 : 150, true, width, provider?.name)
   }
 }
 
-export function MarketRoom({ phase, bids, escrowed, evidence, settled, outcome, speech }: SceneState) {
+export function MarketRoom({ phase, providers, selectedProviderId, onSelectProvider, escrowed, evidence, settled, outcome, speech }: SceneState) {
   const wrapper = useRef<HTMLDivElement>(null)
   const canvas = useRef<HTMLCanvasElement>(null)
-  const motion = useRef<Motion>({ positions: {} as Record<Role, Point>, phase: null, phaseStart: 0, lastFrame: 0, mobile: null })
-  const focused = useRef<Role | null>(null)
-  const [focusedRole, setFocusedRole] = useState<Role | null>(null)
-  const scene = useRef<SceneState>({ phase, bids, escrowed, evidence, settled, outcome, speech })
-  useEffect(() => { scene.current = { phase, bids, escrowed, evidence, settled, outcome, speech } }, [phase, bids, escrowed, evidence, settled, outcome, speech])
+  const motion = useRef<Motion>({ positions: {}, phase: null, phaseStart: 0, lastFrame: 0, mobile: null, visibleIds: '' })
+  const focused = useRef<string | null>(null)
+  const [focusedRole, setFocusedRole] = useState<string | null>(null)
+  const scene = useRef<SceneState>({ phase, providers, selectedProviderId, onSelectProvider, escrowed, evidence, settled, outcome, speech })
+  useEffect(() => { scene.current = { phase, providers, selectedProviderId, onSelectProvider, escrowed, evidence, settled, outcome, speech } }, [phase, providers, selectedProviderId, onSelectProvider, escrowed, evidence, settled, outcome, speech])
+  useEffect(() => { if (selectedProviderId) { focused.current = `quote:${selectedProviderId}`; setFocusedRole(focused.current) } }, [selectedProviderId])
   useEffect(() => {
     let disposed = false
     let frame = 0
@@ -297,7 +336,7 @@ export function MarketRoom({ phase, bids, escrowed, evidence, settled, outcome, 
         const mobile = window.innerWidth <= 620
         const width = mobile ? 320 : 640
         const height = mobile ? 440 : 400
-        if (movement.mobile !== mobile) { movement.positions = {} as Record<Role, Point>; movement.mobile = mobile }
+        if (movement.mobile !== mobile) { movement.positions = {}; movement.visibleIds = ''; movement.mobile = mobile }
         if (movement.phase !== scene.current.phase) { movement.phase = scene.current.phase; movement.phaseStart = timestamp }
         const delta = movement.lastFrame ? Math.min((timestamp - movement.lastFrame) / 1000, .05) : 0
         movement.lastFrame = timestamp
@@ -310,21 +349,29 @@ export function MarketRoom({ phase, bids, escrowed, evidence, settled, outcome, 
     }).catch(() => undefined)
     return () => { disposed = true; cancelAnimationFrame(frame) }
   }, [])
-  const select = (role: Role | null) => { focused.current = role; setFocusedRole(role) }
+  const select = (key: string | null) => {
+    focused.current = key
+    setFocusedRole(key)
+    onSelectProvider(key?.startsWith('quote:') ? key.slice(6) : null)
+  }
+  const selectable = () => {
+    const all = scene.current.providers
+    const visible = shownProviders(all, scene.current.selectedProviderId, window.innerWidth <= 620).map((provider) => `quote:${provider.id}`)
+    return ['buyer', ...(visible.length ? visible : ['provider']), 'escrow', 'verifier']
+  }
   return <div ref={wrapper} className="market-room"><canvas ref={canvas} role="button" tabIndex={0} aria-label="Pixel office. Select an agent to read its current message; press Enter to cycle agents" onClick={(event) => {
     const element = event.currentTarget
     const bounds = element.getBoundingClientRect()
     const x = (event.clientX - bounds.left) * element.width / bounds.width
     const y = (event.clientY - bounds.top) * element.height / bounds.height
-    const roles: Role[] = ['buyer', 'provider', 'escrow', 'verifier']
-    const nearest = roles.map((role) => ({ role, distance: Math.hypot(x - (motion.current.positions[role]?.x ?? -100), y - (motion.current.positions[role]?.y ?? -100)) })).sort((a, b) => a.distance - b.distance)[0]
-    select(nearest.distance < 48 ? nearest.role : null)
+    const nearest = selectable().map((key) => ({ key, distance: Math.hypot(x - (motion.current.positions[key]?.x ?? -100), y - (motion.current.positions[key]?.y ?? -100)) })).sort((a, b) => a.distance - b.distance)[0]
+    select(nearest.distance < 48 ? nearest.key : null)
   }} onKeyDown={(event) => {
     if (event.key === 'Escape') select(null)
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault()
-      const roles: Role[] = ['buyer', 'provider', 'escrow', 'verifier']
-      select(roles[(roles.indexOf(focused.current ?? 'verifier') + 1) % roles.length])
+      const keys = selectable()
+      select(keys[(keys.indexOf(focused.current ?? 'verifier') + 1) % keys.length])
     }
-  }} /><div className="sr-only">Buyer: {speech.buyer}. Provider: {speech.provider}. Escrow: {speech.escrow}. Verifier: {speech.verifier}. {focusedRole ? `Selected ${focusedRole}: ${speech[focusedRole]}.` : ''}</div></div>
+  }} /><div className="sr-only">Buyer: {speech.buyer}. Provider: {providers.map((provider) => `${provider.name} bids ${provider.price} USDC, ETA ${provider.etaMinutes} minutes${provider.winner ? ', selected winner' : ''}`).join('; ') || speech.provider}. Escrow: {speech.escrow}. Verifier: {speech.verifier}. {focusedRole ? `Selected ${focusedRole}.` : ''}</div></div>
 }

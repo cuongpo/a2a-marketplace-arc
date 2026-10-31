@@ -68,6 +68,51 @@
 }
 .market-room { width: 100%; aspect-ratio: 640 / 400; }
 .market-room canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; cursor: pointer; }
+.floor-auction {
+  margin: 14px 26px 0;
+  padding: 11px;
+  border: 1px solid #426a6c;
+  background: #112b39;
+}
+.floor-auction-title { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 9px; color: #a8d6cc; font: 700 10px 'JetBrains Mono', monospace; }
+.floor-auction-title > span { color: #f0d390; letter-spacing: .08em; }
+.floor-auction-title > strong { font-weight: 500; }
+.floor-bid-row { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 3px; scrollbar-color: #557f80 #173947; }
+.floor-bid {
+  display: flex;
+  flex: 1 0 125px;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 125px;
+  max-width: 220px;
+  padding: 9px 10px;
+  border: 1px solid #48616b;
+  background: #193847;
+  color: #c9e0dc;
+  text-align: left;
+  cursor: pointer;
+}
+.floor-bid:hover, .floor-bid.selected { border-color: #8ddbc8; background: #23515a; }
+.floor-bid.winner { border-color: #dcb975; }
+.floor-bid.winner.selected { background: #4a4937; }
+.floor-bid-name { display: flex; align-items: center; gap: 5px; overflow: hidden; max-width: 100%; font: 700 10px 'JetBrains Mono', monospace; text-overflow: ellipsis; white-space: nowrap; }
+.floor-bid-name i { flex: none; width: 6px; height: 6px; border-radius: 50%; background: #78c9a9; }
+.floor-bid.winner .floor-bid-name i { background: #f0cf7e; }
+.floor-bid strong { color: #fff3d3; font: 700 14px 'Space Grotesk', sans-serif; }
+.floor-bid small { color: #9cb8bb; font: 9px 'JetBrains Mono', monospace; }
+.floor-bid-inspector { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 10px; align-items: start; margin-top: 10px; padding: 10px; border: 1px solid #3b6068; background: #0d2331; }
+.floor-bid-inspector > div { display: flex; flex-direction: column; min-width: 0; gap: 3px; }
+.floor-inspector-kicker { color: #86bdb1; font: 700 9px 'JetBrains Mono', monospace; letter-spacing: .07em; }
+.floor-bid-inspector strong { color: #f5f4e9; font: 700 12px 'Space Grotesk', sans-serif; }
+.floor-bid-inspector small { overflow-wrap: anywhere; color: #9bb5ba; font: 9px 'JetBrains Mono', monospace; }
+.floor-bid-inspector details { grid-column: 1 / -1; min-width: 0; border-top: 1px solid #345461; padding-top: 7px; color: #a8d3c9; font: 10px 'JetBrains Mono', monospace; }
+.floor-bid-inspector summary { width: fit-content; cursor: pointer; }
+.floor-bid-inspector details span, .floor-bid-inspector details code { display: block; margin-top: 7px; overflow-wrap: anywhere; color: #b3c9cd; }
+.floor-proof { display: flex; align-items: center; flex-wrap: wrap; gap: 7px 13px; margin: 10px 26px 0; padding: 9px 11px; border: 1px solid #3b6068; background: #102b37; color: #c2dad8; font: 10px 'JetBrains Mono', monospace; }
+.floor-proof > strong { color: #f0d390; letter-spacing: .06em; }
+.floor-proof > span { border-left: 1px solid #54717a; padding-left: 10px; }
+.floor-proof > button { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; color: #a9efd4; background: none; border: 0; cursor: pointer; font: inherit; }
+.floor-proof > button:hover { color: #fff; }
 .trade-room-ledger {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -130,6 +175,8 @@
   .trade-floor-head { align-items: start; flex-direction: column; padding: 20px 16px 14px; }
   .trade-floor-current { font-size: 9px; }
   .trade-floor-scene { margin: 0 16px; }
+  .floor-auction, .floor-proof { margin-right: 16px; margin-left: 16px; }
+  .floor-bid-inspector { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .trade-room-ledger { grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 12px 16px 0; }
   .trade-floor-steps { grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 13px 16px 9px; }
   .trade-floor-note { padding: 1px 16px 16px; }
@@ -138,6 +185,8 @@
   .market-room { aspect-ratio: 320 / 440; }
 }
 @media (max-width: 500px) {
+  .floor-bid-inspector { grid-template-columns: 1fr; }
+  .floor-auction-title { flex-direction: column; gap: 3px; }
   .trade-room-ledger > span { font-size: 9px; }
   .trade-step { gap: 4px; padding: 8px 5px; }
   .trade-step-index { width: 19px; height: 19px; }
@@ -146,6 +195,7 @@
 }
 @media (max-width: 360px) {
   .trade-floor-scene { margin: 0 4px; }
+  .floor-auction, .floor-proof { margin-right: 4px; margin-left: 4px; }
   .trade-room-ledger { margin: 12px 4px 0; }
 }
 @media (prefers-reduced-motion: reduce) { .trade-step.active { animation: none; } }
