@@ -36,7 +36,7 @@ export function TradeFloor({ mission, onOpenDetails }: { mission: PMission | nul
     const timer = setTimeout(() => setReplay((previous) => {
       if (!previous || previous.missionId !== mission?.id) return previous
       return previous.cursor + 1 < milestones.length ? { ...previous, cursor: previous.cursor + 1 } : null
-    }), 1250)
+    }), 4500)
     return () => clearTimeout(timer)
   }, [activeReplay, mission?.id, milestones.length])
   const done = activeReplay ? Object.fromEntries(STEPS.map((step) => [step.id, milestones.slice(0, activeReplay.cursor + 1).some((past) => past.id === step.id)])) as Record<Step, boolean> : actualDone

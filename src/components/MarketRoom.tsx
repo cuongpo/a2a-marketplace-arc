@@ -3,6 +3,8 @@ import { useEffect, useRef } from 'react'
 type Phase = 'request' | 'quotes' | 'escrow' | 'delivery' | 'verdict' | 'settlement' | null
 type Art = { room: HTMLImageElement; interiors: HTMLImageElement; idle: Record<string, HTMLImageElement>; run: Record<string, HTMLImageElement> }
 type Point = { x: number; y: number }
+type SceneState = { phase: Phase; bids: number; escrowed: boolean; evidence: boolean; settled: boolean; outcome: string | null }
+type Motion = { positions: Record<string, Point>; phase: Phase; phaseStart: number; lastFrame: number; mobile: boolean | null }
 
 const BASE = '/assets/modern-tiles/'
 const PEOPLE = ['Adam', 'Amelia', 'Bob', 'Alex'] as const
@@ -27,39 +29,51 @@ function label(ctx: CanvasRenderingContext2D, text: string, x: number, y: number
 }
 
 function path(points: Point[], progress: number): Point {
-  const u = Math.max(0, Math.min(.9999, progress)) * (points.length - 1)
-  const a = Math.floor(u)
-  const t = u - a
-  return { x: points[a].x + (points[a + 1].x - points[a].x) * t, y: points[a].y + (points[a + 1].y - points[a].y) * t }
+  const lengths = points.slice(1).map((point, i) => Math.hypot(point.x - points[i].x, point.y - points[i].y))
+  let distance = Math.max(0, Math.min(1, progress)) * lengths.reduce((sum, length) => sum + length, 0)
+  for (let i = 0; i < lengths.length; i++) {
+    if (distance <= lengths[i] || i === lengths.length - 1) {
+      const t = lengths[i] === 0 ? 0 : distance / lengths[i]
+      return { x: points[i].x + (points[i + 1].x - points[i].x) * t, y: points[i].y + (points[i + 1].y - points[i].y) * t }
+    }
+    distance -= lengths[i]
+  }
+  return points[points.length - 1]
 }
 
-function route(from: Point, to: Point, aisle: number, time: number): Point {
-  const progress = (1 - Math.cos(time * 1.7)) / 2
+function route(from: Point, to: Point, aisle: number, elapsed: number): Point {
+  // Four and a half seconds each way, with a pause at either station.
+  const cycle = elapsed % 12
+  const leg = cycle < 4.5 ? cycle / 4.5 : cycle < 6 ? 1 : cycle < 10.5 ? 1 - (cycle - 6) / 4.5 : 0
+  const progress = leg * leg * (3 - 2 * leg)
   return path([from, { x: from.x, y: aisle }, { x: to.x, y: aisle }, to], progress)
 }
 
 function drawPerson(ctx: CanvasRenderingContext2D, art: Art, name: typeof PEOPLE[number], point: Point, busy: boolean, time: number, headingLeft = false) {
   ctx.fillStyle = '#34404666'
   ctx.beginPath()
-  ctx.ellipse(Math.round(point.x), Math.round(point.y - 1), 9, 3, 0, 0, Math.PI * 2)
+  ctx.ellipse(Math.round(point.x), Math.round(point.y - 1), 13, 4, 0, 0, Math.PI * 2)
   ctx.fill()
   const image = busy ? art.run[name] : art.idle[name]
-  const frame = Math.floor(time * (busy ? 8 : 3)) % 6
-  const x = Math.round(point.x - 8)
-  const y = Math.round(point.y - 32 + (busy ? Math.sin(time * 12) * 1.2 : 0))
+  const frame = Math.floor(time * (busy ? 5 : 1.5)) % 6
+  const width = 28
+  const height = 56
+  const x = Math.round(point.x - width / 2)
+  const y = Math.round(point.y - height)
   if (headingLeft) {
     ctx.save()
-    ctx.translate(x + 16, 0)
+    ctx.translate(x + width, 0)
     ctx.scale(-1, 1)
-    sprite(ctx, image, frame * 16, 0, 16, 32, 0, y)
+    sprite(ctx, image, frame * 16, 0, 16, 32, 0, y, width, height)
     ctx.restore()
-  } else sprite(ctx, image, frame * 16, 0, 16, 32, x, y)
+  } else sprite(ctx, image, frame * 16, 0, 16, 32, x, y, width, height)
 }
 
-function room(ctx: CanvasRenderingContext2D, art: Art, width: number, height: number, mobile: boolean, phase: Phase, bids: number, escrowed: boolean, evidence: boolean, settled: boolean, outcome: string | null, time: number) {
+function room(ctx: CanvasRenderingContext2D, art: Art, width: number, height: number, mobile: boolean, state: SceneState, motion: Motion, time: number, elapsed: number, delta: number, reducedMotion: boolean) {
   ctx.clearRect(0, 0, width, height)
   ctx.imageSmoothingEnabled = false
   const { room: tiles, interiors: props } = art
+  const { phase, bids, escrowed, evidence, settled, outcome } = state
   // The actual LimeZu tiles form one continuous room. All furniture and people share this coordinate system.
   for (let x = 0; x < width; x += 16) {
     for (let y = 0; y < 64; y += 16) sprite(ctx, tiles, 64, y < 48 ? 144 + (y % 32) : 192, 16, 16, x, y)
@@ -126,22 +140,31 @@ function room(ctx: CanvasRenderingContext2D, art: Art, width: number, height: nu
     ctx.globalAlpha = 1
   })
 
-  const buyer = phase === 'escrow' ? route(point.buyer, point.escrow, point.aisle, time) : point.buyer
-  const provider = phase === 'quotes' ? route(point.provider, point.buyer, point.aisle, time) : phase === 'delivery' ? route(point.provider, point.escrow, point.aisle, time) : point.provider
-  const verifier = phase === 'verdict' ? route(point.verifier, point.escrow, point.aisle, time) : point.verifier
+  const animate = (name: string, target: Point) => {
+    const previous = motion.positions[name] ?? target
+    const distance = Math.hypot(target.x - previous.x, target.y - previous.y)
+    const weight = reducedMotion || distance === 0 ? 1 : Math.min(1 - Math.exp(-delta * 7), 90 * delta / distance)
+    const current = { x: previous.x + (target.x - previous.x) * weight, y: previous.y + (target.y - previous.y) * weight }
+    motion.positions[name] = current
+    return { at: current, moving: Math.hypot(current.x - previous.x, current.y - previous.y) > .12, left: current.x < previous.x - .1 }
+  }
+  const buyer = animate('Adam', phase === 'escrow' && !reducedMotion ? route(point.buyer, point.escrow, point.aisle, elapsed) : point.buyer)
+  const provider = animate('Amelia', phase === 'quotes' && !reducedMotion ? route(point.provider, point.buyer, point.aisle, elapsed) : phase === 'delivery' && !reducedMotion ? route(point.provider, point.escrow, point.aisle, elapsed) : point.provider)
+  const providerB = animate('Bob', point.providerB)
+  const verifier = animate('Alex', phase === 'verdict' && !reducedMotion ? route(point.verifier, point.escrow, point.aisle, elapsed) : point.verifier)
   const people = [
-    { name: 'Adam' as const, at: buyer, busy: phase === 'escrow', left: buyer.x < point.buyer.x },
-    { name: 'Amelia' as const, at: provider, busy: phase === 'quotes' || phase === 'delivery', left: provider.x < point.provider.x },
-    { name: 'Bob' as const, at: point.providerB, busy: phase === 'quotes' && bids > 1, left: false },
-    { name: 'Alex' as const, at: verifier, busy: phase === 'verdict', left: verifier.x < point.verifier.x },
+    { name: 'Adam' as const, ...buyer },
+    { name: 'Amelia' as const, ...provider },
+    { name: 'Bob' as const, ...providerB },
+    { name: 'Alex' as const, ...verifier },
   ]
-  people.sort((a, b) => a.at.y - b.at.y).forEach((person) => drawPerson(ctx, art, person.name, person.at, person.busy, time, person.left))
+  people.sort((a, b) => a.at.y - b.at.y).forEach((person) => drawPerson(ctx, art, person.name, person.at, person.moving && !reducedMotion, reducedMotion ? 0 : time, person.left))
 
   if (phase === 'quotes' && bids > 0) {
     ctx.fillStyle = '#d8fff0'
-    ctx.fillRect(Math.round(provider.x - 7), Math.round(provider.y - 43), 10, 7)
+    ctx.fillRect(Math.round(provider.at.x - 7), Math.round(provider.at.y - 65), 10, 7)
     ctx.fillStyle = '#3a8a79'
-    ctx.fillRect(Math.round(provider.x - 6), Math.round(provider.y - 42), 8, 1)
+    ctx.fillRect(Math.round(provider.at.x - 6), Math.round(provider.at.y - 64), 8, 1)
   }
   if (escrowed) {
     const glow = Math.sin(time * 3) * .15 + .75
@@ -154,7 +177,7 @@ function room(ctx: CanvasRenderingContext2D, art: Art, width: number, height: nu
   }
   if (phase === 'settlement' && settled) {
     const destination = outcome === 'ProviderPaid' ? point.provider : point.buyer
-    const coin = route(point.escrow, destination, point.aisle, time)
+    const coin = route(point.escrow, destination, point.aisle, elapsed)
     ctx.fillStyle = '#f8d681'
     ctx.fillRect(Math.round(coin.x - 3), Math.round(coin.y - 35), 7, 7)
     ctx.fillStyle = '#fff4bf'
@@ -169,9 +192,13 @@ export function MarketRoom({ phase, bids, escrowed, evidence, settled, outcome }
 }) {
   const wrapper = useRef<HTMLDivElement>(null)
   const canvas = useRef<HTMLCanvasElement>(null)
+  const scene = useRef<SceneState>({ phase, bids, escrowed, evidence, settled, outcome })
+  useEffect(() => { scene.current = { phase, bids, escrowed, evidence, settled, outcome } }, [phase, bids, escrowed, evidence, settled, outcome])
   useEffect(() => {
     let disposed = false
     let frame = 0
+    const motion: Motion = { positions: {}, phase: null, phaseStart: 0, lastFrame: 0, mobile: null }
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
     const sources = [
       `${BASE}room-builder.png`, `${BASE}interiors.png`,
       ...PEOPLE.map((name) => `${BASE}${name}_idle_anim_16x16.png`),
@@ -187,14 +214,18 @@ export function MarketRoom({ phase, bids, escrowed, evidence, settled, outcome }
         const mobile = wrapper.current.clientWidth < 500
         const width = mobile ? 320 : 640
         const height = mobile ? 420 : 320
+        if (motion.mobile !== mobile) { motion.positions = {}; motion.mobile = mobile }
+        if (motion.phase !== scene.current.phase) { motion.phase = scene.current.phase; motion.phaseStart = timestamp }
+        const delta = motion.lastFrame ? Math.min((timestamp - motion.lastFrame) / 1000, .05) : 0
+        motion.lastFrame = timestamp
         if (canvas.current.width !== width || canvas.current.height !== height) { canvas.current.width = width; canvas.current.height = height }
         const ctx = canvas.current.getContext('2d')
-        if (ctx) room(ctx, art, width, height, mobile, phase, bids, escrowed, evidence, settled, outcome, timestamp / 1000)
+        if (ctx) room(ctx, art, width, height, mobile, scene.current, motion, reducedMotion.matches ? 0 : timestamp / 1000, reducedMotion.matches ? 0 : (timestamp - motion.phaseStart) / 1000, delta, reducedMotion.matches)
         frame = requestAnimationFrame(draw)
       }
       frame = requestAnimationFrame(draw)
     }).catch(() => undefined)
     return () => { disposed = true; cancelAnimationFrame(frame) }
-  }, [phase, bids, escrowed, evidence, settled, outcome])
+  }, [])
   return <div ref={wrapper} className="market-room"><canvas ref={canvas} role="img" aria-label="Top-down pixel-art trading room with a buyer desk, provider market, USDC escrow and verifier station" /></div>
 }
