@@ -95,7 +95,11 @@ export function FieldGrid({ cells, selected, onSelect }: { cells: TileCell[]; se
       <div ref={viewportRef} className="farm-viewport" role="region" aria-label="Scrollable pixel field map; select a plot to inspect its mission" tabIndex={0}>
         <svg className="farm-canvas" viewBox="0 0 960 690" role="img" aria-label="Interactive pixel art field map with twenty-four selectable plots">
           <defs>
-            <pattern id="farm-grass" width="32" height="32" patternUnits="userSpaceOnUse"><image href={asset(106)} width="32" height="32" imageRendering="pixelated" /></pattern>
+            <pattern id="farm-grass" width="64" height="64" patternUnits="userSpaceOnUse">
+              <rect width="64" height="64" fill="#78aa65" />
+              <path d="M7 10h4v3H7zm3 3h3v2h-3zM38 5h3v4h-3zm4 4h3v2h-3zM53 27h4v3h-4zm-3 3h3v2h-3zM17 37h3v4h-3zm4 4h4v2h-4zM42 51h4v3h-4zm-3 3h3v2h-3z" fill="#9ac77a" />
+              <path d="M11 48h3v2h-3zM27 18h4v2h-4zM57 55h3v2h-3zM31 59h3v2h-3z" fill="#568e57" />
+            </pattern>
             <pattern id="farm-soil" width="32" height="32" patternUnits="userSpaceOnUse"><image href={asset(0)} width="32" height="32" imageRendering="pixelated" /></pattern>
             <pattern id="farm-refund" width="16" height="16" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><rect width="16" height="16" fill="#613d3e" opacity=".7" /><rect width="5" height="16" fill="#e08a64" opacity=".8" /></pattern>
             <pattern id="farm-water" width="48" height="48" patternUnits="userSpaceOnUse"><rect width="48" height="48" fill="#5faab9" /><rect x="5" y="9" width="20" height="4" fill="#98d3cd" /><rect x="29" y="30" width="14" height="3" fill="#8bc9ca" /><rect x="18" y="39" width="5" height="3" fill="#418fa5" /></pattern>
