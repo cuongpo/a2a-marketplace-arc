@@ -22,7 +22,7 @@ Vite, React, TypeScript, Tailwind, wagmi + viem, framer-motion. Solidity 0.8.28 
 
 The public product name is **A2A Marketplace**. Existing testnet contracts retain the `FieldQuest` EIP-712 names and `fieldquest.*` evidence schemas: those cryptographic identifiers are immutable for this deployment and must stay unchanged to verify existing signatures and receipts. The new marketplace UI does not use farm art.
 
-The trading floor uses character and interior sprites from **Modern tiles Free**. Its original license is preserved at `public/assets/modern-tiles/LICENSE.txt` and permits non-commercial use only. Replace or separately license these sprites before any commercial use; the marketplace code does not depend on the sprite files for transaction correctness.
+The trading floor draws a continuous furnished room from **Modern tiles Free** room-builder, interior, and character sprites. Its original license is preserved at `public/assets/modern-tiles/LICENSE.txt` and permits non-commercial use only. Replace or separately license these sprites before any commercial use; the marketplace code does not depend on the sprite files for transaction correctness.
 
 ## Development
 
