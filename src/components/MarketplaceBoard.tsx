@@ -23,29 +23,13 @@ const phaseLabel: Record<Exclude<Filter, 'all'>, string> = {
   open: 'AVAILABLE', bidding: 'BIDS OPEN', working: 'IN PROGRESS', paid: 'PAID', refunded: 'CLOSED',
 }
 
-export function MarketplaceBoard({ cells, selected, mission, onSelect, onOpenDetails }: { cells: TileCell[]; selected: string | null; mission: PMission | null; onSelect: (slot: string) => void; onOpenDetails: () => void }) {
+export function MarketplaceBoard({ cells, selected, onSelect }: { cells: TileCell[]; selected: string | null; onSelect: (slot: string) => void }) {
   const [filter, setFilter] = useState<Filter>('all')
   const filtered = cells.filter((c) => filter === 'all' || phase(c) === filter)
   const count = (p: Filter) => cells.filter((c) => p === 'all' || phase(c) === p).length
-  const active = count('bidding') + count('working')
 
   return (
     <section className="market-shell" aria-label="A2A Marketplace request board">
-      <div className="market-hero">
-        <div className="market-hero-copy">
-          <span className="market-kicker"><span className="market-live-dot" /> LIVE ON ARC / AGENT ECONOMY</span>
-          <h1>Agent-to-agent<br /><span>commerce, visible.</span></h1>
-          <p>Post a data request. Independent provider agents bid with signed quotes. A buyer agent selects one, escrow holds USDC, and a verifier decides the payout.</p>
-        </div>
-        <div className="market-hero-stats" aria-label="Marketplace activity">
-          <div><strong>{cells.length ? count('all') : '—'}</strong><span>REQUEST SLOTS</span></div>
-          <div><strong>{cells.length ? active : '—'}</strong><span>LIVE TRADES</span></div>
-          <div><strong>{cells.length ? count('paid') : '—'}</strong><span>PAID OUT</span></div>
-        </div>
-      </div>
-
-      <TradeFloor mission={mission} onOpenDetails={onOpenDetails} />
-
       <div className="market-board-head">
         <div><span className="market-section-label">THE EXCHANGE</span><h2>Request board <small>{cells.length || 24} slots</small></h2><p>Current service category: signed water-level data. Select an available slot to open a request.</p></div>
         <span className="market-chain-pill"><Fingerprint size={14} /> WALLET-SIGNED ACTIONS</span>
@@ -70,4 +54,23 @@ export function MarketplaceBoard({ cells, selected, mission, onSelect, onOpenDet
       <div className="market-foot"><span><span className="market-live-dot" /> Chain state and payment receipts are live.</span><span>Demo fixtures are labelled SIMULATED. A signed reading proves key control, not physical truth.</span></div>
     </section>
   )
+}
+
+export function MarketplaceStage({ cells, mission, onOpenDetails }: { cells: TileCell[]; mission: PMission | null; onOpenDetails: () => void }) {
+  const count = (p: Exclude<Filter, 'all'>) => cells.filter((c) => phase(c) === p).length
+  return <section className="market-shell market-stage" aria-label="A2A Marketplace trading floor">
+    <div className="market-hero">
+      <div className="market-hero-copy">
+        <span className="market-kicker"><span className="market-live-dot" /> LIVE ON ARC / AGENT ECONOMY</span>
+        <h1>Agent-to-agent <span>commerce, visible.</span></h1>
+        <p>Post a data request. Provider agents bid, USDC enters escrow, and a verifier decides the payout.</p>
+      </div>
+      <div className="market-hero-stats" aria-label="Marketplace activity">
+        <div><strong>{cells.length || '—'}</strong><span>REQUEST SLOTS</span></div>
+        <div><strong>{cells.length ? count('bidding') + count('working') : '—'}</strong><span>LIVE TRADES</span></div>
+        <div><strong>{cells.length ? count('paid') : '—'}</strong><span>PAID OUT</span></div>
+      </div>
+    </div>
+    <TradeFloor mission={mission} onOpenDetails={onOpenDetails} />
+  </section>
 }

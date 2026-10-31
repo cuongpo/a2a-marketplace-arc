@@ -3,7 +3,7 @@ import { ConnectKitButton } from 'connectkit'
 import { Network } from 'lucide-react'
 import { navigate, useApi, type Overview, type PMission, type TileCell } from '@/lib/api'
 import { EventFeed } from '@/components/EventFeed'
-import { MarketplaceBoard } from '@/components/MarketplaceBoard'
+import { MarketplaceBoard, MarketplaceStage } from '@/components/MarketplaceBoard'
 import { MissionComposer } from '@/components/MissionComposer'
 import { MissionDetail } from '@/components/MissionDetail'
 import { ModeBanner } from '@/components/ModeBanner'
@@ -53,12 +53,14 @@ function MissionControl({ ov }: { ov: Overview | null }) {
   }
 
   return (
-    <main className="mx-auto grid w-full max-w-[1600px] gap-4 px-3 py-4 sm:px-5 lg:grid-cols-[minmax(0,1.8fr)_minmax(350px,1fr)] lg:items-start">
-      <div className="min-w-0 space-y-4">
-        {tiles.error && !tiles.data ? <Empty title="Marketplace unavailable">{tiles.error}</Empty> : <MarketplaceBoard cells={cells} selected={selected} mission={mission ?? null} onSelect={pick} onOpenDetails={() => panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })} />}
-        <div className="hidden lg:block"><EventFeed ov={ov} /></div>
-      </div>
-      <div ref={panelRef} className="min-w-0 scroll-mt-3 space-y-4">
+    <main className="mx-auto w-full max-w-[1600px] px-3 py-4 sm:px-5">
+      {tiles.error && !tiles.data ? <Empty title="Marketplace unavailable">{tiles.error}</Empty> : <MarketplaceStage cells={cells} mission={mission ?? null} onOpenDetails={() => panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })} />}
+      <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1.8fr)_minmax(350px,1fr)] lg:items-start">
+        <div className="min-w-0 space-y-4">
+          {tiles.error && !tiles.data ? null : <MarketplaceBoard cells={cells} selected={selected} onSelect={pick} />}
+          <div className="hidden lg:block"><EventFeed ov={ov} /></div>
+        </div>
+        <div ref={panelRef} className="min-w-0 scroll-mt-3 space-y-4">
         <div role="tablist" aria-label="Panels" className="flex gap-2">
           {(['mission', 'vault'] as const).map((t) => (
             <button key={t} role="tab" aria-selected={tab === t} type="button" className={`btn ${tab === t ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setTab(t)}>
@@ -99,6 +101,7 @@ function MissionControl({ ov }: { ov: Overview | null }) {
           <Empty title="Loading request">Waiting for the exchange.</Empty>
         )}
         <div className="lg:hidden"><EventFeed ov={ov} /></div>
+        </div>
       </div>
     </main>
   )

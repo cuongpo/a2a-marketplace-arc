@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { MarketplaceBoard } from '@/components/MarketplaceBoard'
+import { MarketplaceBoard, MarketplaceStage } from '@/components/MarketplaceBoard'
 import { TradeFloor } from '@/components/TradeFloor'
 import { ModeBanner } from '@/components/ModeBanner'
 import { BidList } from '@/components/BidList'
@@ -42,12 +42,12 @@ const pending: PMission = {
 
 describe('UI render smoke (structure only, no live data)', () => {
   test('marketplace renders request slots and live states', () => {
-    expect(renderToStaticMarkup(<MarketplaceBoard cells={[]} selected={null} mission={null} onSelect={() => undefined} onOpenDetails={() => undefined} />)).toContain('Agent-to-agent')
+    expect(renderToStaticMarkup(<MarketplaceStage cells={[]} mission={null} onOpenDetails={() => undefined} />)).toContain('Agent-to-agent')
     const cells: TileCell[] = [
       { tile: 'A1', col: 'A', row: 1, state: 'fog' },
       { tile: 'B2', col: 'B', row: 2, state: 'revealed', value: 444, simulated: true },
     ]
-    const html = renderToStaticMarkup(<MarketplaceBoard cells={cells} selected="B2" mission={null} onSelect={() => undefined} onOpenDetails={() => undefined} />)
+    const html = renderToStaticMarkup(<MarketplaceBoard cells={cells} selected="B2" onSelect={() => undefined} />)
     expect(html).toContain('AVAILABLE')
     expect(html).toContain('PAID')
     expect(html).toContain('SIM')

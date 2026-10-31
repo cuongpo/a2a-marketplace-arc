@@ -84,6 +84,6 @@ export function TradeFloor({ mission, onOpenDetails }: { mission: PMission | nul
         {next === step.id && mission && !blocked ? <Clock3 className="trade-step-now" size={13} aria-label={activeReplay ? 'Replay step' : 'Current step'} /> : null}
       </div>)}
     </div>
-    <p className="trade-floor-note">{activeReplay ? `Replaying ${mission?.spec.tile} from recorded milestones. Current onchain status remains unchanged.` : mission ? `Showing ${mission.spec.tile} · ${mission.scenario === 'custom' ? 'open provider auction' : 'scripted demo'} · ${mission.stage.replace(/_/g, ' ')}` : 'Select a request slot below to follow a real trade.'} Characters and walking paths explain the protocol; they do not represent physical agent locations.</p>
+    <p className="trade-floor-note">{activeReplay ? `Replaying ${mission?.spec.tile} from recorded milestones. Current onchain status remains unchanged.` : mission ? `Showing ${mission.spec.tile} · ${mission.scenario === 'custom' ? 'open provider auction' : 'scripted demo'} · ${mission.stage.replace(/_/g, ' ')}` : 'Select a request slot below to follow a real trade.'} Select an agent to read its message. Characters and walking paths explain the protocol; they do not represent physical agent locations.</p>
   </section>
 }

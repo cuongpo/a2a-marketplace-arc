@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 type Phase = 'request' | 'quotes' | 'escrow' | 'delivery' | 'verdict' | 'settlement' | null
 type Role = 'buyer' | 'provider' | 'escrow' | 'verifier'
@@ -10,7 +10,8 @@ type Motion = { positions: Record<Role, Point>; phase: Phase; phaseStart: number
 
 const BASE = '/assets/modern-tiles/'
 const PEOPLE = ['Adam', 'Amelia', 'Bob', 'Alex'] as const
-const DIRECTION_FRAME: Record<Direction, number> = { left: 0, up: 6, right: 12, down: 18 }
+// LimeZu's 24-frame strips are right, up, left, down (six frames each).
+const DIRECTION_FRAME: Record<Direction, number> = { right: 0, up: 6, left: 12, down: 18 }
 const ROLE_PERSON: Record<Role, typeof PEOPLE[number]> = { buyer: 'Adam', provider: 'Amelia', escrow: 'Bob', verifier: 'Alex' }
 const ROLE_COLOR: Record<Role, string> = { buyer: '#81bff0', provider: '#f6cb83', escrow: '#f4cc7b', verifier: '#c7b2f5' }
 
@@ -20,6 +21,64 @@ function sprite(ctx: CanvasRenderingContext2D, img: HTMLImageElement, sx: number
 
 function furniture(ctx: CanvasRenderingContext2D, img: HTMLImageElement, x: number, y: number, sx: number, sy: number, sw: number, sh: number, w = sw, h = sh) {
   sprite(ctx, img, sx, sy, sw, sh, x, y, w, h)
+}
+
+function deskPod(ctx: CanvasRenderingContext2D, x: number, y: number, width: number) {
+  const middle = Math.round(width / 2)
+  ctx.fillStyle = '#303746'
+  ctx.fillRect(x + 2, y + 28, width - 4, 8)
+  ctx.fillRect(x, y + 3, 4, 33)
+  ctx.fillRect(x + width - 4, y + 3, 4, 33)
+  ctx.fillRect(x + middle - 2, y + 4, 4, 31)
+  ctx.fillStyle = '#c5b78f'
+  ctx.fillRect(x + 5, y + 5, width - 10, 22)
+  ctx.fillStyle = '#ead9a8'
+  ctx.fillRect(x + 6, y + 6, width - 12, 15)
+  ctx.fillStyle = '#a89977'
+  ctx.fillRect(x + 6, y + 22, width - 12, 3)
+  for (const center of [x + middle / 2, x + middle + middle / 2]) {
+    const screen = Math.round(center - 11)
+    ctx.fillStyle = '#323b50'
+    ctx.fillRect(screen, y - 10, 22, 17)
+    ctx.fillStyle = '#4f91b6'
+    ctx.fillRect(screen + 3, y - 7, 16, 10)
+    ctx.fillStyle = '#8ac9df'
+    ctx.fillRect(screen + 5, y - 5, 8, 2)
+    ctx.fillStyle = '#3a4252'
+    ctx.fillRect(screen + 9, y + 7, 4, 4)
+    ctx.fillRect(screen + 3, y + 14, 17, 3)
+    ctx.fillStyle = '#7d8d98'
+    ctx.fillRect(screen + 5, y + 15, 13, 1)
+  }
+  ctx.fillStyle = '#f4f0df'
+  ctx.fillRect(x + middle - 6, y + 9, 12, 9)
+  ctx.fillStyle = '#8297a5'
+  ctx.fillRect(x + middle - 4, y + 11, 8, 1)
+  ctx.fillRect(x + middle - 4, y + 14, 6, 1)
+  ctx.fillStyle = '#44485a'
+  ctx.fillRect(x + middle - 12, y + 31, 24, 15)
+  ctx.fillStyle = '#626b7c'
+  ctx.fillRect(x + middle - 9, y + 33, 18, 12)
+  ctx.fillStyle = '#343a4b'
+  ctx.fillRect(x + middle - 6, y + 45, 12, 4)
+}
+
+function nameplate(ctx: CanvasRenderingContext2D, role: Role, point: Point, active: boolean, roomHeight: number) {
+  const title = role === 'provider' ? 'Provider agent' : role === 'buyer' ? 'Buyer agent' : role === 'escrow' ? 'Escrow' : 'Verifier'
+  ctx.font = 'bold 9px sans-serif'
+  const width = Math.ceil(ctx.measureText(title).width) + 24
+  const x = Math.round(point.x - width / 2)
+  const y = Math.min(roomHeight - 25, Math.round(point.y + 5))
+  ctx.fillStyle = '#12191fe8'
+  ctx.beginPath()
+  ctx.roundRect(x, y, width, 18, 9)
+  ctx.fill()
+  ctx.fillStyle = active ? ROLE_COLOR[role] : '#70caaa'
+  ctx.beginPath()
+  ctx.arc(x + 9, y + 9, 3, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.fillStyle = '#fffaf0'
+  ctx.fillText(title, x + 17, y + 12)
 }
 
 function path(points: Point[], progress: number): Point {
@@ -36,8 +95,8 @@ function path(points: Point[], progress: number): Point {
 }
 
 function walkingPath(from: Point, to: Point, mobile: boolean): Point[] {
-  const upperAisle = mobile ? 241 : 245
-  const lowerAisle = mobile ? 410 : 365
+  const upperAisle = 260
+  const lowerAisle = mobile ? 400 : 365
   const center = mobile ? 160 : 320
   const fromUpper = from.y < (mobile ? 280 : 260)
   const toUpper = to.y < (mobile ? 280 : 260)
@@ -56,14 +115,14 @@ function route(from: Point, to: Point, mobile: boolean, elapsed: number): Point 
   return path(points, leg * leg * (3 - 2 * leg))
 }
 
-function drawPerson(ctx: CanvasRenderingContext2D, art: Art, name: typeof PEOPLE[number], point: Point, moving: boolean, direction: Direction, time: number) {
+function drawPerson(ctx: CanvasRenderingContext2D, art: Art, name: typeof PEOPLE[number], point: Point, moving: boolean, direction: Direction, time: number, mobile: boolean) {
   ctx.fillStyle = '#24323d70'
   ctx.beginPath()
-  ctx.ellipse(Math.round(point.x), Math.round(point.y - 1), 12, 4, 0, 0, Math.PI * 2)
+  ctx.ellipse(Math.round(point.x), Math.round(point.y - 1), mobile ? 15 : 12, 4, 0, 0, Math.PI * 2)
   ctx.fill()
   const image = moving ? art.run[name] : art.idle[name]
   const frame = DIRECTION_FRAME[direction] + Math.floor(time * (moving ? 5 : 1.5)) % 6
-  sprite(ctx, image, frame * 16, 0, 16, 32, point.x - 14, point.y - 56, 28, 56)
+  sprite(ctx, image, frame * 16, 0, 16, 32, point.x - (mobile ? 18 : 14), point.y - (mobile ? 64 : 56), mobile ? 36 : 28, mobile ? 64 : 56)
 }
 
 function fitMessage(ctx: CanvasRenderingContext2D, message: string, width: number): string[] {
@@ -109,14 +168,14 @@ function drawBubble(ctx: CanvasRenderingContext2D, role: Role, message: string, 
   fitMessage(ctx, message, width - 16).forEach((line, i) => ctx.fillText(line, left + 8, top + 27 + i * 11))
 }
 
-function room(ctx: CanvasRenderingContext2D, art: Art, width: number, height: number, mobile: boolean, state: SceneState, motion: Motion, time: number, elapsed: number, delta: number, reducedMotion: boolean) {
+function room(ctx: CanvasRenderingContext2D, art: Art, width: number, height: number, mobile: boolean, state: SceneState, motion: Motion, focusedRole: Role | null, time: number, elapsed: number, delta: number, reducedMotion: boolean) {
   ctx.clearRect(0, 0, width, height)
   ctx.imageSmoothingEnabled = false
   const { room: tiles, interiors: props } = art
   const { phase, bids, escrowed, evidence, settled, outcome, speech } = state
   for (let x = 0; x < width; x += 16) {
     for (let y = 0; y < 64; y += 16) sprite(ctx, tiles, 64, y < 48 ? 144 + (y % 32) : 192, 16, 16, x, y)
-    for (let y = 64; y < height; y += 16) sprite(ctx, tiles, 224, 176, 16, 16, x, y)
+    for (let y = 64; y < height; y += 16) sprite(ctx, tiles, 224, 144, 16, 16, x, y)
   }
   ctx.fillStyle = '#756b67'
   ctx.fillRect(0, 61, width, 4)
@@ -132,19 +191,19 @@ function room(ctx: CanvasRenderingContext2D, art: Art, width: number, height: nu
     buyer: { x: centers.left, y: centers.top }, provider: { x: centers.right, y: centers.top },
     escrow: { x: centers.left, y: centers.bottom }, verifier: { x: centers.right, y: centers.bottom },
   }
-  const deskX = mobile ? [12, 172] : [102, 426]
+  const deskX = mobile ? [12, 180] : [102, 426]
   const topDeskY = mobile ? 132 : 145
   const bottomDeskY = mobile ? 304 : 276
   const bubbleWidth = mobile ? 140 : 170
   const topBubbleY = mobile ? 80 : 90
-  const bottomBubbleY = mobile ? 251 : 225
+  const bottomBubbleY = mobile ? 248 : 247
 
   // Paired workstations face north toward their monitors. The central lane stays clear for walking.
   if (mobile) {
     furniture(ctx, props, 24, 8, 96, 0, 48, 48)
     furniture(ctx, props, 248, 8, 96, 0, 48, 48)
-    furniture(ctx, props, 8, 338, 208, 704, 32, 48, 26, 39)
-    furniture(ctx, props, 286, 338, 208, 704, 32, 48, 26, 39)
+    furniture(ctx, props, 8, 370, 208, 704, 32, 48, 26, 39)
+    furniture(ctx, props, 286, 370, 208, 704, 32, 48, 26, 39)
     furniture(ctx, props, 137, 211, 48, 672, 48, 32, 46, 35)
     furniture(ctx, props, 143, 218, 112, 208, 48, 32, 34, 18)
   } else {
@@ -159,8 +218,8 @@ function room(ctx: CanvasRenderingContext2D, art: Art, width: number, height: nu
     furniture(ctx, props, 594, 143, 208, 704, 32, 48)
   }
   for (const x of deskX) {
-    furniture(ctx, props, x, topDeskY, 0, 576, 112, 32)
-    furniture(ctx, props, x, bottomDeskY, 0, 576, 112, 32)
+    deskPod(ctx, x, topDeskY, mobile ? 128 : 150)
+    deskPod(ctx, x, bottomDeskY, mobile ? 128 : 150)
   }
 
   const move = (role: Role, target: Point) => {
@@ -172,7 +231,7 @@ function room(ctx: CanvasRenderingContext2D, art: Art, width: number, height: nu
     const dx = current.x - previous.x
     const dy = current.y - previous.y
     const moving = Math.hypot(dx, dy) > .12
-    const direction: Direction = !moving ? 'up' : Math.abs(dy) > Math.abs(dx) ? (dy < 0 ? 'up' : 'down') : (dx < 0 ? 'left' : 'right')
+    const direction: Direction = !moving ? 'down' : Math.abs(dy) > Math.abs(dx) ? (dy < 0 ? 'up' : 'down') : (dx < 0 ? 'left' : 'right')
     return { role, at: current, moving, direction }
   }
   const buyer = move('buyer', phase === 'escrow' && !reducedMotion ? route(point.buyer, point.escrow, mobile, elapsed) : point.buyer)
@@ -180,7 +239,9 @@ function room(ctx: CanvasRenderingContext2D, art: Art, width: number, height: nu
   const escrow = move('escrow', point.escrow)
   const verifier = move('verifier', phase === 'verdict' && !reducedMotion ? route(point.verifier, point.escrow, mobile, elapsed) : point.verifier)
   const people = [buyer, provider, escrow, verifier]
-  people.sort((a, b) => a.at.y - b.at.y).forEach((person) => drawPerson(ctx, art, ROLE_PERSON[person.role], person.at, person.moving && !reducedMotion, person.direction, time))
+  people.sort((a, b) => a.at.y - b.at.y).forEach((person) => drawPerson(ctx, art, ROLE_PERSON[person.role], person.at, person.moving && !reducedMotion, person.direction, time, mobile))
+  const speaking: Role | null = focusedRole ?? (phase === 'request' ? 'buyer' : phase === 'quotes' || phase === 'delivery' ? 'provider' : phase === 'escrow' || phase === 'settlement' ? 'escrow' : phase === 'verdict' ? 'verifier' : settled ? 'escrow' : null)
+  people.forEach((person) => nameplate(ctx, person.role, person.at, person.role === speaking, height))
 
   if (bids > 0) {
     ctx.fillStyle = '#e8c573'
@@ -202,21 +263,24 @@ function room(ctx: CanvasRenderingContext2D, art: Art, width: number, height: nu
     ctx.fillStyle = '#f8d681'
     ctx.fillRect(Math.round(coin.x - 3), Math.round(coin.y - 31), 7, 7)
   }
-  drawBubble(ctx, 'buyer', speech.buyer, centers.left, topBubbleY, bubbleWidth, phase === 'request', width)
-  drawBubble(ctx, 'provider', speech.provider, centers.right, topBubbleY, bubbleWidth, phase === 'quotes' || phase === 'delivery', width)
-  drawBubble(ctx, 'escrow', speech.escrow, centers.left, bottomBubbleY, bubbleWidth, phase === 'escrow' || phase === 'settlement', width)
-  drawBubble(ctx, 'verifier', speech.verifier, centers.right, bottomBubbleY, bubbleWidth, phase === 'verdict', width)
+  if (speaking) {
+    const upper = speaking === 'buyer' || speaking === 'provider'
+    drawBubble(ctx, speaking, speech[speaking], upper ? point[speaking].x : width / 2, upper ? topBubbleY : bottomBubbleY, upper ? bubbleWidth : mobile ? 140 : 150, true, width)
+  }
 }
 
 export function MarketRoom({ phase, bids, escrowed, evidence, settled, outcome, speech }: SceneState) {
   const wrapper = useRef<HTMLDivElement>(null)
   const canvas = useRef<HTMLCanvasElement>(null)
+  const motion = useRef<Motion>({ positions: {} as Record<Role, Point>, phase: null, phaseStart: 0, lastFrame: 0, mobile: null })
+  const focused = useRef<Role | null>(null)
+  const [focusedRole, setFocusedRole] = useState<Role | null>(null)
   const scene = useRef<SceneState>({ phase, bids, escrowed, evidence, settled, outcome, speech })
   useEffect(() => { scene.current = { phase, bids, escrowed, evidence, settled, outcome, speech } }, [phase, bids, escrowed, evidence, settled, outcome, speech])
   useEffect(() => {
     let disposed = false
     let frame = 0
-    const motion: Motion = { positions: {} as Record<Role, Point>, phase: null, phaseStart: 0, lastFrame: 0, mobile: null }
+    const movement = motion.current
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
     const sources = [
       `${BASE}room-builder.png`, `${BASE}interiors.png`,
@@ -230,21 +294,37 @@ export function MarketRoom({ phase, bids, escrowed, evidence, settled, outcome, 
       PEOPLE.forEach((name, i) => { art.idle[name] = images[i + 2]; art.run[name] = images[i + 6] })
       const draw = (timestamp: number) => {
         if (disposed || !wrapper.current || !canvas.current) return
-        const mobile = window.innerWidth <= 500
+        const mobile = window.innerWidth <= 620
         const width = mobile ? 320 : 640
-        const height = mobile ? 440 : 380
-        if (motion.mobile !== mobile) { motion.positions = {} as Record<Role, Point>; motion.mobile = mobile }
-        if (motion.phase !== scene.current.phase) { motion.phase = scene.current.phase; motion.phaseStart = timestamp }
-        const delta = motion.lastFrame ? Math.min((timestamp - motion.lastFrame) / 1000, .05) : 0
-        motion.lastFrame = timestamp
+        const height = mobile ? 440 : 400
+        if (movement.mobile !== mobile) { movement.positions = {} as Record<Role, Point>; movement.mobile = mobile }
+        if (movement.phase !== scene.current.phase) { movement.phase = scene.current.phase; movement.phaseStart = timestamp }
+        const delta = movement.lastFrame ? Math.min((timestamp - movement.lastFrame) / 1000, .05) : 0
+        movement.lastFrame = timestamp
         if (canvas.current.width !== width || canvas.current.height !== height) { canvas.current.width = width; canvas.current.height = height }
         const ctx = canvas.current.getContext('2d')
-        if (ctx) room(ctx, art, width, height, mobile, scene.current, motion, reducedMotion.matches ? 0 : timestamp / 1000, reducedMotion.matches ? 0 : (timestamp - motion.phaseStart) / 1000, delta, reducedMotion.matches)
+        if (ctx) room(ctx, art, width, height, mobile, scene.current, movement, focused.current, reducedMotion.matches ? 0 : timestamp / 1000, reducedMotion.matches ? 0 : (timestamp - movement.phaseStart) / 1000, delta, reducedMotion.matches)
         frame = requestAnimationFrame(draw)
       }
       frame = requestAnimationFrame(draw)
     }).catch(() => undefined)
     return () => { disposed = true; cancelAnimationFrame(frame) }
   }, [])
-  return <div ref={wrapper} className="market-room"><canvas ref={canvas} role="img" aria-label="Pixel office with buyer, provider, escrow and verifier desks; speech bubbles show the selected trade's recorded state" /><div className="sr-only">Buyer: {speech.buyer}. Provider: {speech.provider}. Escrow: {speech.escrow}. Verifier: {speech.verifier}.</div></div>
+  const select = (role: Role | null) => { focused.current = role; setFocusedRole(role) }
+  return <div ref={wrapper} className="market-room"><canvas ref={canvas} role="button" tabIndex={0} aria-label="Pixel office. Select an agent to read its current message; press Enter to cycle agents" onClick={(event) => {
+    const element = event.currentTarget
+    const bounds = element.getBoundingClientRect()
+    const x = (event.clientX - bounds.left) * element.width / bounds.width
+    const y = (event.clientY - bounds.top) * element.height / bounds.height
+    const roles: Role[] = ['buyer', 'provider', 'escrow', 'verifier']
+    const nearest = roles.map((role) => ({ role, distance: Math.hypot(x - (motion.current.positions[role]?.x ?? -100), y - (motion.current.positions[role]?.y ?? -100)) })).sort((a, b) => a.distance - b.distance)[0]
+    select(nearest.distance < 48 ? nearest.role : null)
+  }} onKeyDown={(event) => {
+    if (event.key === 'Escape') select(null)
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault()
+      const roles: Role[] = ['buyer', 'provider', 'escrow', 'verifier']
+      select(roles[(roles.indexOf(focused.current ?? 'verifier') + 1) % roles.length])
+    }
+  }} /><div className="sr-only">Buyer: {speech.buyer}. Provider: {speech.provider}. Escrow: {speech.escrow}. Verifier: {speech.verifier}. {focusedRole ? `Selected ${focusedRole}: ${speech[focusedRole]}.` : ''}</div></div>
 }
