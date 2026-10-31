@@ -29,6 +29,12 @@ function Sprite({ n, x, y, size = 36 }: { n: number; x: number; y: number; size?
   return <image href={asset(n)} x={x} y={y} width={size} height={size} imageRendering="pixelated" aria-hidden="true" />
 }
 
+function TallTree({ x, y }: { x: number; y: number }) {
+  // Kenney's tall pine is a two-tile sprite: tile 3 is the tip, tile 15 the base.
+  const tileSize = 42
+  return <g aria-hidden="true"><Sprite n={3} x={x} y={y} size={tileSize} /><Sprite n={15} x={x} y={y + tileSize} size={tileSize} /></g>
+}
+
 function Plot({ cell, x, y, selected, onSelect }: { cell: TileCell; x: number; y: number; selected: boolean; onSelect: (tile: string) => void }) {
   const variant = (cell.tile.charCodeAt(0) * 7 + Number(cell.tile.slice(1)) * 13) % cropFor.length
   const bad = ['rejected', 'expired', 'blocked'].includes(cell.state)
@@ -109,8 +115,7 @@ export function FieldGrid({ cells, selected, onSelect }: { cells: TileCell[]; se
           <g className="farm-water-shimmer" fill="#d6f6dc" opacity=".7" aria-hidden="true"><rect x="35" y="34" width="23" height="4" /><rect x="49" y="192" width="17" height="4" /><rect x="28" y="382" width="26" height="4" /><rect x="43" y="545" width="16" height="4" /><rect x="160" y="652" width="27" height="4" /><rect x="415" y="667" width="21" height="4" /><rect x="744" y="648" width="30" height="4" /></g>
           <path d="M91 0V635M94 137H859M94 248H859M94 359H859M94 470H859M94 581H859" stroke="#a76545" strokeWidth="14" /><path d="M91 0V635M94 137H859M94 248H859M94 359H859M94 470H859M94 581H859" stroke="#d79861" strokeWidth="9" strokeDasharray="9 5" />
           <rect x="19" y="119" width="65" height="20" fill="#a57450" stroke="#704c3f" strokeWidth="3" /><rect x="19" y="572" width="65" height="20" fill="#a57450" stroke="#704c3f" strokeWidth="3" />
-          {/* Keep whole tree sprites clear of both the viewBox edge and the plot layer. */}
-          {[{ n: 15, x: 858, y: 163 }, { n: 27, x: 862, y: 318 }, { n: 15, x: 855, y: 540 }].map((tree, i) => <Sprite key={`tree-${i}`} n={tree.n} x={tree.x} y={tree.y} size={53} />)}
+          {[{ x: 865, y: 158 }, { x: 865, y: 316 }, { x: 865, y: 540 }].map((tree, i) => <TallTree key={`tree-${i}`} x={tree.x} y={tree.y} />)}
           {[77, 78, 79, 80, 81, 83].map((n, i) => <Sprite key={`deco-${i}`} n={n} x={167 + i * 104} y={26 + (i % 2) * 12} size={35} />)}
           <Sprite n={72} x={255} y={52} size={39} /><Sprite n={73} x={293} y={52} size={39} /><Sprite n={96} x={845} y={494} size={40} /><Sprite n={97} x={872} y={494} size={40} />
           <g aria-hidden="true">{[90, 91, 92, 102, 103, 104, 114, 115, 116].map((n, i) => <Sprite key={`barn-${n}`} n={n} x={716 + (i % 3) * 35} y={4 + Math.floor(i / 3) * 35} size={35} />)}<text x="768" y="125" textAnchor="middle" className="farm-building-label">PROVIDER BARN</text></g>
