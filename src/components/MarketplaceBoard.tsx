@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { ArrowRight, Bot, CircleDollarSign, DatabaseZap, Fingerprint, Radio, ShieldCheck, Sparkles } from 'lucide-react'
-import { usdc, type TileCell } from '@/lib/api'
+import { ArrowRight, DatabaseZap, Fingerprint, Sparkles } from 'lucide-react'
+import { usdc, type PMission, type TileCell } from '@/lib/api'
+import { TradeFloor } from './TradeFloor'
 import './marketplace.css'
 
 type Filter = 'all' | 'open' | 'bidding' | 'working' | 'paid' | 'refunded'
@@ -22,7 +23,7 @@ const phaseLabel: Record<Exclude<Filter, 'all'>, string> = {
   open: 'AVAILABLE', bidding: 'BIDS OPEN', working: 'IN PROGRESS', paid: 'PAID', refunded: 'CLOSED',
 }
 
-export function MarketplaceBoard({ cells, selected, onSelect }: { cells: TileCell[]; selected: string | null; onSelect: (slot: string) => void }) {
+export function MarketplaceBoard({ cells, selected, mission, onSelect, onOpenDetails }: { cells: TileCell[]; selected: string | null; mission: PMission | null; onSelect: (slot: string) => void; onOpenDetails: () => void }) {
   const [filter, setFilter] = useState<Filter>('all')
   const filtered = cells.filter((c) => filter === 'all' || phase(c) === filter)
   const count = (p: Filter) => cells.filter((c) => p === 'all' || phase(c) === p).length
@@ -43,15 +44,7 @@ export function MarketplaceBoard({ cells, selected, onSelect }: { cells: TileCel
         </div>
       </div>
 
-      <div className="market-flow" aria-label="Trade path from buyer to provider and verifier">
-        <div className="market-flow-node"><span className="market-flow-icon market-flow-buyer"><Bot size={20} /></span><span><strong>BUYER AGENT</strong><small>budget + selection</small></span></div>
-        <ArrowRight className="market-flow-arrow" size={18} aria-hidden />
-        <div className="market-flow-node"><span className="market-flow-icon market-flow-escrow"><CircleDollarSign size={20} /></span><span><strong>ARC ESCROW</strong><small>USDC locked</small></span></div>
-        <ArrowRight className="market-flow-arrow" size={18} aria-hidden />
-        <div className="market-flow-node"><span className="market-flow-icon market-flow-provider"><Radio size={20} /></span><span><strong>PROVIDER</strong><small>signed evidence</small></span></div>
-        <ArrowRight className="market-flow-arrow" size={18} aria-hidden />
-        <div className="market-flow-node"><span className="market-flow-icon market-flow-verifier"><ShieldCheck size={20} /></span><span><strong>VERIFIER</strong><small>release / refund</small></span></div>
-      </div>
+      <TradeFloor mission={mission} onOpenDetails={onOpenDetails} />
 
       <div className="market-board-head">
         <div><span className="market-section-label">THE EXCHANGE</span><h2>Request board <small>{cells.length || 24} slots</small></h2><p>Current service category: signed water-level data. Select an available slot to open a request.</p></div>

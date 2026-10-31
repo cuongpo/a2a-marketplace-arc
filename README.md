@@ -8,7 +8,7 @@ Built with [Arc Studio](https://studio.arc.io)
 
 ## What you can do
 
-- Explore the marketplace request board, live feed and public receipts without a wallet.
+- Explore the animated trading floor, request board, live feed and public receipts without a wallet. The floor highlights the actual request, bid, escrow, evidence, verdict and settlement state; character positions are illustrative.
 - Connect an operator wallet with a vault budget, choose an available request slot and open a public A2A auction. Signing the request sends no transaction.
 - Connect any external provider wallet to submit one independently signed bid. The buyer agent checks its signature, price, ETA, evidence capability and historical reliability when bidding closes.
 - The winner uses its own wallet to accept the onchain assignment, register a signer, prepare evidence and commit its hash to escrow. Managed demo providers remain available only in scripted testnet journeys.
@@ -21,6 +21,8 @@ Built with [Arc Studio](https://studio.arc.io)
 Vite, React, TypeScript, Tailwind, wagmi + viem, framer-motion. Solidity 0.8.28 with OpenZeppelin and Foundry. A Bun backend runs the buyer, provider, verifier and settlement workers with persisted, idempotent jobs.
 
 The public product name is **A2A Marketplace**. Existing testnet contracts retain the `FieldQuest` EIP-712 names and `fieldquest.*` evidence schemas: those cryptographic identifiers are immutable for this deployment and must stay unchanged to verify existing signatures and receipts. The new marketplace UI does not use farm art.
+
+The trading floor uses character and interior sprites from **Modern tiles Free**. Its original license is preserved at `public/assets/modern-tiles/LICENSE.txt` and permits non-commercial use only. Replace or separately license these sprites before any commercial use; the marketplace code does not depend on the sprite files for transaction correctness.
 
 ## Development
 

@@ -45,14 +45,17 @@ function MissionControl({ ov }: { ov: Overview | null }) {
   const pick = (t: string) => {
     setPickedTile(t)
     setTab('mission')
-    // On narrow screens the detail panel sits below the board: bring it into view.
-    if (window.matchMedia('(max-width: 1023px)').matches) setTimeout(() => panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60)
+    // First show the visual trade for existing work; new slots go straight to the composer.
+    if (window.matchMedia('(max-width: 1023px)').matches) setTimeout(() => {
+      const target = missions.data?.some((m) => m.spec.tile === t) ? document.querySelector('.trade-floor') : panelRef.current
+      target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 60)
   }
 
   return (
     <main className="mx-auto grid w-full max-w-[1600px] gap-4 px-3 py-4 sm:px-5 lg:grid-cols-[minmax(0,1.8fr)_minmax(350px,1fr)] lg:items-start">
       <div className="min-w-0 space-y-4">
-        {tiles.error && !tiles.data ? <Empty title="Marketplace unavailable">{tiles.error}</Empty> : <MarketplaceBoard cells={cells} selected={selected} onSelect={pick} />}
+        {tiles.error && !tiles.data ? <Empty title="Marketplace unavailable">{tiles.error}</Empty> : <MarketplaceBoard cells={cells} selected={selected} mission={mission ?? null} onSelect={pick} onOpenDetails={() => panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })} />}
         <div className="hidden lg:block"><EventFeed ov={ov} /></div>
       </div>
       <div ref={panelRef} className="min-w-0 scroll-mt-3 space-y-4">

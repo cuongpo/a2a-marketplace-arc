@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { MarketplaceBoard } from '@/components/MarketplaceBoard'
+import { TradeFloor } from '@/components/TradeFloor'
 import { ModeBanner } from '@/components/ModeBanner'
 import { BidList } from '@/components/BidList'
 import { EvidencePanel } from '@/components/EvidencePanel'
@@ -41,15 +42,29 @@ const pending: PMission = {
 
 describe('UI render smoke (structure only, no live data)', () => {
   test('marketplace renders request slots and live states', () => {
-    expect(renderToStaticMarkup(<MarketplaceBoard cells={[]} selected={null} onSelect={() => undefined} />)).toContain('Agent-to-agent')
+    expect(renderToStaticMarkup(<MarketplaceBoard cells={[]} selected={null} mission={null} onSelect={() => undefined} onOpenDetails={() => undefined} />)).toContain('Agent-to-agent')
     const cells: TileCell[] = [
       { tile: 'A1', col: 'A', row: 1, state: 'fog' },
       { tile: 'B2', col: 'B', row: 2, state: 'revealed', value: 444, simulated: true },
     ]
-    const html = renderToStaticMarkup(<MarketplaceBoard cells={cells} selected="B2" onSelect={() => undefined} />)
+    const html = renderToStaticMarkup(<MarketplaceBoard cells={cells} selected="B2" mission={null} onSelect={() => undefined} onOpenDetails={() => undefined} />)
     expect(html).toContain('AVAILABLE')
     expect(html).toContain('PAID')
     expect(html).toContain('SIM')
+  })
+  test('trading floor reflects chain settlement instead of inventing a payout', () => {
+    const quoting = renderToStaticMarkup(<TradeFloor mission={pending} onOpenDetails={() => undefined} />)
+    expect(quoting).toContain('0 verified bids')
+    expect(quoting).toContain('No funds locked')
+    expect(quoting).not.toContain('PROVIDER PAID')
+    const settled = renderToStaticMarkup(<TradeFloor onOpenDetails={() => undefined} mission={{ ...pending, chain: {
+      chainId: 5042002, escrow: '0x0000000000000000000000000000000000000002', onchainId: '9',
+      provider: '0x0000000000000000000000000000000000000003', verifier: '0x0000000000000000000000000000000000000004',
+      providerPrice: '400000', verifierFee: '50000', deadline: 2, createdBlock: '1', createdAtChain: 1,
+    }, onchain: { status: 'Settled', outcome: 'ProviderPaid' } as never }} />)
+    expect(settled).toContain('PROVIDER PAID')
+    expect(settled).toContain('0.45 USDC settled')
+    expect(renderToStaticMarkup(<TradeFloor onOpenDetails={() => undefined} mission={{ ...pending, onchain: { status: 'Settled', outcome: 'Split' } as never }} />)).toContain('SPLIT SETTLEMENT')
   })
   test('mode banner distinguishes unreachable backend and shows no data', () => {
     expect(renderToStaticMarkup(<ModeBanner ov={null} error="boom" />)).toContain('Backend unreachable')

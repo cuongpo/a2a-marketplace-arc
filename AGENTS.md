@@ -38,3 +38,4 @@ Mainnet is NOT deployed; Arc Studio never deploys to mainnet. See `docs/MAINNET_
 - Scripts sign with role keys via `scripts/lib/signed-api.ts`. Never POST to the live server as the demo operator unless you intend to spend vault funds.
 - The Arc Studio badge in `src/main.tsx` is an in-flow element after the footer, not fixed.
 - Browser challenge is a normal wallet tx to `AgentBudgetVault.challengeMission`; arbitration goes through the API only for the arbiter address.
+- The trading floor uses user-provided Modern tiles Free sprites. The original license in `public/assets/modern-tiles/LICENSE.txt` permits non-commercial use only. Preserve that notice and use separately licensed art for any commercial release. The React scene is a view of mission and chain state; replay reconstructs only recorded milestones.
