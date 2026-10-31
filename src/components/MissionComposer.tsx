@@ -9,7 +9,7 @@ import { ErrorBox, SimBadge } from './ui'
 
 type Scenario = 'custom' | 'accept' | 'reject' | 'dispute'
 const SCENARIOS: { id: Scenario; title: string; body: string; sim: boolean }[] = [
-  { id: 'custom', title: 'Live mission', body: 'Agents pick the best signed quote. The bound provider wallet supplies the signed observation.', sim: false },
+  { id: 'custom', title: 'Open A2A auction', body: 'External provider wallets bid during a public quote window. The winning provider accepts and delivers onchain.', sim: false },
   { id: 'accept', title: 'Scripted: accepted journey', body: 'Provider A wins; a SIMULATED sensor fixture feeds a plausible reading; payout and withdrawal.', sim: true },
   { id: 'reject', title: 'Scripted: rejected journey', body: 'Provider B wins on price; a SIMULATED fixture sends an implausible reading; rejection and refund.', sim: true },
   { id: 'dispute', title: 'Scripted: dispute journey', body: 'A SIMULATED reading disagrees with the reference gauge; the verifier escalates and the arbiter wallet must rule.', sim: true },
@@ -19,7 +19,8 @@ export function MissionComposer({ tile, ov, onCreated, onOpenVault }: { tile: st
   const [scenario, setScenario] = useState<Scenario>('custom')
   const [budget, setBudget] = useState('1.00')
   const [minutes, setMinutes] = useState('30')
-  const [secondSource, setSecondSource] = useState(true)
+  const [quoteWindow, setQuoteWindow] = useState('90')
+  const [secondSource, setSecondSource] = useState(false)
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
   const { address, isConnected } = useAccount()
@@ -49,8 +50,9 @@ export function MissionComposer({ tile, ov, onCreated, onOpenVault }: { tile: st
         scenario,
         budgetUsdc: budget,
         deadlineMinutes: Number(minutes),
+        quoteWindowSec: scenario === 'custom' ? Number(quoteWindow) : undefined,
         autoFixture: scenario === 'accept' || scenario === 'reject',
-        requireSecondSource: secondSource,
+        requireSecondSource: scenario !== 'custom' && secondSource,
       })
       onCreated(m)
     } catch (e) {
@@ -61,11 +63,11 @@ export function MissionComposer({ tile, ov, onCreated, onOpenVault }: { tile: st
   }
 
   return (
-    <section className="card p-4 sm:p-5" aria-label={`Open a mission on tile ${tile}`}>
-      <div className="label">New mission</div>
-      <h2 className="display text-2xl font-bold">Tile {tile}</h2>
+    <section className="card p-4 sm:p-5" aria-label={`Open a request in slot ${tile}`}>
+      <div className="label">New A2A request</div>
+      <h2 className="display text-2xl font-bold">Request slot {tile}</h2>
       <p className="mt-1 text-sm text-[var(--muted)] text-pretty">
-        Obtain a signed water-level reading (mm) for plot MKD-FIC-{tile} (fictional). The buyer agent requests signed quotes, ranks them, and funds an escrow from <strong>your</strong> vault budget only
+        Current marketplace service: a signed water-level data point (mm). Independent provider agents submit bids, and the buyer agent funds an escrow from <strong>your</strong> vault budget only
         if your vault policy allows it. You sign the request with your wallet; signing moves no funds.
       </p>
 
@@ -131,13 +133,14 @@ export function MissionComposer({ tile, ov, onCreated, onOpenVault }: { tile: st
           </select>
         </label>
       </div>
+      {scenario === 'custom' ? <label className="mt-3 block"><span className="label">Public bidding window</span><select value={quoteWindow} onChange={(e) => setQuoteWindow(e.target.value)} className="mt-1"><option value="90">90 seconds</option><option value="120">2 minutes</option><option value="300">5 minutes</option></select></label> : null}
       {budgetBad ? <p className="mt-1 text-xs text-[var(--danger)]">{budgetBad}</p> : null}
       {overBudget ? <p className="mt-1 text-xs text-[var(--danger)]">Budget exceeds the USDC available in your vault.</p> : null}
 
-      <label className="mt-3 flex items-center gap-2 text-sm">
+      {scenario !== 'custom' ? <label className="mt-3 flex items-center gap-2 text-sm">
         <input type="checkbox" className="!min-h-0 !w-auto" checked={secondSource} onChange={(e) => setSecondSource(e.target.checked)} />
-        Require second-source corroboration (reference gauge is a simulated fixture)
-      </label>
+        Include simulated reference gauge check in the scripted demo
+      </label> : null}
 
       <div className="mt-4 inset p-3 text-xs text-[var(--muted)]">
         <div className="flex justify-between">

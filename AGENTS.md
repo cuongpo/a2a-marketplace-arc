@@ -1,10 +1,10 @@
-# FieldQuest
+# A2A Marketplace
 
 > Built with Arc Studio. Project memory for future agents.
 
 ## What this app does
 
-Verified field observations market on Arc. A buyer agent spends an operator USDC budget (inside vault policy) on escrowed missions; provider agents deliver signed readings; a verifier agent checks them; USDC is released or refunded by contract. Public receipt page per mission.
+An A2A market for signed data requests on Arc. Operator wallets fund a vault, external provider wallets bid with EIP-712 quotes, the buyer agent selects one provider and funds escrow, and the provider submits signed evidence for verification and USDC settlement. Current service category is water-level data. Existing contracts and evidence schemas retain their original `FieldQuest` cryptographic identifiers for compatibility.
 
 ## Tech stack
 
@@ -20,7 +20,7 @@ Verified field observations market on Arc. A buyer agent spends an operator USDC
 - AgentBudgetVault 0x8c29ac73ee2fef44542192c4a217620473bcfe76 (trusts the escrow above)
 - Erc8004Adapter 0x5f083614fc370621ea640ca29701cfd65be787da
 
-Mainnet is NOT deployed; Arc Studio never deploys to mainnet. See `docs/MAINNET_RUNBOOK.md`.
+Mainnet is NOT deployed; Arc Studio never deploys to mainnet. See `docs/MAINNET_RUNBOOK.md`. Do not claim the marketplace moves real mainnet USDC yet.
 
 ## Decisions
 
@@ -34,7 +34,7 @@ Mainnet is NOT deployed; Arc Studio never deploys to mainnet. See `docs/MAINNET_
 
 ## API auth (hardening)
 
-- All POSTs except `/auth/challenge` need `Authorization: FieldQuest nonce=..., signature=...` (EIP-712 `ApiRequest`, single-use nonce, 120 s, bound to method + path + canonical body hash + chain id). See `server/auth.ts`, `server/authz.ts`, `server/http.ts`.
+- All POSTs except `/auth/challenge` need `Authorization: A2AMarket nonce=..., signature=...` (EIP-712 `ApiRequest`, single-use nonce, 120 s, bound to method + path + canonical body hash + chain id). See `server/auth.ts`, `server/authz.ts`, `server/http.ts`.
 - Scripts sign with role keys via `scripts/lib/signed-api.ts`. Never POST to the live server as the demo operator unless you intend to spend vault funds.
 - The Arc Studio badge in `src/main.tsx` is an in-flow element after the footer, not fixed.
 - Browser challenge is a normal wallet tx to `AgentBudgetVault.challengeMission`; arbitration goes through the API only for the arbiter address.

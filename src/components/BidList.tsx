@@ -10,7 +10,8 @@ const CAP: Record<string, string> = {
 
 export function BidList({ m }: { m: PMission }) {
   if (!m.decision) {
-    return <Empty title="Bids">{m.stage === 'blocked' ? (m.stageNote ?? 'No eligible bids') : 'Buyer agent is requesting signed quotes from provider agents.'}</Empty>
+    if (!m.quotes.length) return <Empty title="Bids">{m.stage === 'blocked' ? (m.stageNote ?? 'No eligible bids') : 'Public auction is open. Provider wallets can submit signed quotes below.'}</Empty>
+    return <div><div className="label mb-2">Live bids · {m.quotes.length}</div><ul className="space-y-2">{m.quotes.map((q) => <li key={q.quoteId} className="inset flex flex-wrap items-center justify-between gap-2 p-3 text-xs"><span className="font-semibold">{q.providerName}</span><span className="num">{usdc(q.priceUsdc)} USDC · ETA {Math.round(q.etaSec / 60)}m</span></li>)}</ul><p className="mt-2 text-xs text-[var(--subtle)]">Buyer agent scores the signed bids when the auction closes.</p></div>
   }
   return (
     <div>

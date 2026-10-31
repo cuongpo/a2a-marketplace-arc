@@ -11,7 +11,7 @@ import { API_AUTH_STATEMENT, apiAuthDomain, apiAuthTypes, type ApiChallenge } fr
  *     method + path + body hash + chain id.
  *  3. The wallet signs the EIP-712 `ApiRequest` message (the server rebuilds it from its OWN stored copy, never
  *     from client input).
- *  4. The real request carries `Authorization: FieldQuest nonce=0x..., signature=0x...`. The server consumes the
+ *  4. The real request carries `Authorization: A2AMarket nonce=0x..., signature=0x...`. The server consumes the
  *     nonce, re-checks method, path, body hash, expiry and chain id, recovers the signer, and returns it.
  *
  * Roles are decided by the caller (authz.ts) from the RECOVERED signer address only. There is no bearer secret, no
@@ -37,7 +37,7 @@ type Stored = ApiChallenge & { used: boolean }
 const challenges = new Map<string, Stored>()
 
 /** Only these POST routes can be authorised. Everything else is not signable. */
-const SIGNABLE = [/^\/missions$/, /^\/missions\/[\w-]+\/(?:observation|fixture|challenge|arbiter)$/]
+const SIGNABLE = [/^\/missions$/, /^\/missions\/[\w-]+\/(?:quotes|observation|fixture|challenge|arbiter)$/]
 
 export function normalizePath(p: string): string {
   const noQuery = p.split('?')[0]
@@ -74,7 +74,7 @@ export function issueChallenge(input: { method: unknown; path: unknown; bodyHash
   return c
 }
 
-const HEADER = /^FieldQuest nonce=(0x[0-9a-fA-F]{64}),\s*signature=(0x[0-9a-fA-F]{130})$/
+const HEADER = /^A2AMarket nonce=(0x[0-9a-fA-F]{64}),\s*signature=(0x[0-9a-fA-F]{130})$/
 
 export async function authenticate(input: {
   method: string

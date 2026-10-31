@@ -7,12 +7,12 @@ import { api } from '@/lib/api'
 import type { PMission, Overview } from '@/lib/api'
 
 /**
- * Every write to the FieldQuest API is authorised by a wallet signature (EIP-712) over the exact method, path and body.
+ * Every write to the A2A Marketplace API is authorised by a wallet signature (EIP-712) over the exact method, path and body.
  * No bearer token or shared secret exists in this bundle. Reading the map, feed and receipts needs no wallet.
  */
 export class WalletRequiredError extends Error {
   constructor() {
-    super('Connect a wallet to do this. Browsing the map and the public receipts needs no wallet.')
+    super('Connect a wallet to do this. Browsing requests and public receipts needs no wallet.')
   }
 }
 
@@ -39,7 +39,7 @@ export function useSignedPost() {
       return api<T>(path, {
         method: 'POST',
         body: JSON.stringify(body),
-        headers: { authorization: `FieldQuest nonce=${c.nonce}, signature=${signature}` },
+        headers: { authorization: `A2AMarket nonce=${c.nonce}, signature=${signature}` },
       })
     },
     [address, isConnected, chainId, signTypedDataAsync, switchChainAsync],

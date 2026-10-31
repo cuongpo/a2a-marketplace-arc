@@ -45,6 +45,7 @@ export function ActionPanel({ m, ov, onChange }: { m: PMission; ov: Overview | n
   const [variant, setVariant] = useState<'valid' | 'implausible' | 'ambiguous'>(m.scenario === 'reject' ? 'implausible' : m.scenario === 'dispute' ? 'ambiguous' : 'valid')
   const [json, setJson] = useState('')
   const st = m.onchain?.status
+  const externalProvider = !!m.decision?.scored.find((s) => s.quote.quoteId === m.decision?.chosenQuoteId && !s.quote.simulated)
 
   async function run(key: string, fn: () => Promise<unknown>) {
     setBusy(key)
@@ -88,7 +89,7 @@ export function ActionPanel({ m, ov, onChange }: { m: PMission; ov: Overview | n
             <p className="text-xs text-[var(--muted)]">The operator enabled the SIMULATED fixture for this mission, so the provider agent feeds it automatically.</p>
           ) : null}
           {!canProvide ? <RoleHint who="bound provider" expected={m.chain?.provider} connected={roles.connected} address={roles.address} /> : null}
-          {ov?.fixtureEnabled && !m.autoFixture ? (
+          {ov?.fixtureEnabled && !m.autoFixture && !externalProvider ? (
             <div className="flex flex-wrap items-center gap-2">
               <select aria-label="Fixture variant" value={variant} disabled={!canProvide} onChange={(e) => setVariant(e.target.value as typeof variant)} className="!w-auto">
                 <option value="valid">valid reading</option>
@@ -107,7 +108,7 @@ export function ActionPanel({ m, ov, onChange }: { m: PMission; ov: Overview | n
           ) : null}
           <div>
             <label className="label" htmlFor="obs">
-              Or paste a signed reading JSON from a field operator or device adapter
+              Or paste a signed reading JSON from your registered signer or device adapter
             </label>
             <textarea
               id="obs"
@@ -144,7 +145,7 @@ export function ActionPanel({ m, ov, onChange }: { m: PMission; ov: Overview | n
         </div>
       ) : null}
 
-      {queued ? <p className="text-sm text-[var(--muted)]">Observation queued. The provider agent validates it against the registry before submitting its hash.</p> : null}
+      {queued ? <p className="text-sm text-[var(--muted)]">{externalProvider ? 'Evidence prepared. The winning provider wallet must commit its hash onchain.' : 'Observation queued. The provider agent validates it against the registry before submitting its hash.'}</p> : null}
 
       {st === 'Accepted' ? (
         <div className="inset space-y-2 p-3">

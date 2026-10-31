@@ -41,6 +41,9 @@ export interface TileCell {
   missionId?: string
   value?: number
   simulated?: boolean
+  bidCount?: number
+  budgetUsdc?: string
+  quoteDeadlineUnix?: number
 }
 export interface OnchainSnap {
   status: string

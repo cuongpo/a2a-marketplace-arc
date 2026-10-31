@@ -17,7 +17,7 @@ Coverage: creation and funding, vault caps (per mission, total, daily with day r
 bun run test:backend
 ```
 
-`server/tests/auth.test.ts` drives the real HTTP handler with real EIP-712 signatures from throwaway keys: unauthenticated POST on every mutating route, malformed and unknown nonces, valid operator and provider signatures, replay (failed and successful), tampered body, path swap, forged challenge, expired challenge, wrong chain id, wrong role for operator, provider, mission operator and arbiter, paused and expired vault policy, and public reads. Chain reads are replaced by fakes, no transaction can be sent.
+`server/tests/auth.test.ts` drives the real HTTP handler with real EIP-712 signatures from throwaway keys: unauthenticated POST on every mutating route, independent provider quote submission, duplicate and wrong-wallet bids, valid operator and provider signatures, replay (failed and successful), tampered body, path swap, forged challenge, expired challenge, wrong chain id, wrong role for operator, provider, mission operator and arbiter, paused and expired vault policy, and public reads. Chain reads are replaced by fakes, no transaction can be sent.
 
 The rest covers canonical hashing, input guards, buyer ranking and exclusion, fixture signatures, evidence redaction and hash stability, upload validation and idempotent jobs (a finished job never re-runs, failed jobs back off, a running job is not started twice).
 

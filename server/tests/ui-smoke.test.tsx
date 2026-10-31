@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { FieldGrid } from '@/components/FieldGrid'
+import { MarketplaceBoard } from '@/components/MarketplaceBoard'
 import { ModeBanner } from '@/components/ModeBanner'
 import { BidList } from '@/components/BidList'
 import { EvidencePanel } from '@/components/EvidencePanel'
@@ -16,7 +16,7 @@ const pending: PMission = {
     schema: 'fieldquest.mission/1',
     tile: 'B2',
     region: 'test',
-    plotId: 'MKD-FIC-B2',
+    plotId: 'A2A-SLOT-B2',
     objective: 'obj',
     metric: 'water_level',
     unit: 'mm',
@@ -40,22 +40,22 @@ const pending: PMission = {
 } as PMission
 
 describe('UI render smoke (structure only, no live data)', () => {
-  test('field grid renders fog placeholders and labelled tiles', () => {
-    expect(renderToStaticMarkup(<FieldGrid cells={[]} selected={null} onSelect={() => undefined} />)).toContain('Mekong Delta')
+  test('marketplace renders request slots and live states', () => {
+    expect(renderToStaticMarkup(<MarketplaceBoard cells={[]} selected={null} onSelect={() => undefined} />)).toContain('Agent-to-agent')
     const cells: TileCell[] = [
       { tile: 'A1', col: 'A', row: 1, state: 'fog' },
       { tile: 'B2', col: 'B', row: 2, state: 'revealed', value: 444, simulated: true },
     ]
-    const html = renderToStaticMarkup(<FieldGrid cells={cells} selected="B2" onSelect={() => undefined} />)
-    expect(html).toContain('unsurveyed')
-    expect(html).toContain('verified and paid')
-    expect(html).toContain('(simulated)')
+    const html = renderToStaticMarkup(<MarketplaceBoard cells={cells} selected="B2" onSelect={() => undefined} />)
+    expect(html).toContain('AVAILABLE')
+    expect(html).toContain('PAID')
+    expect(html).toContain('SIM')
   })
   test('mode banner distinguishes unreachable backend and shows no data', () => {
     expect(renderToStaticMarkup(<ModeBanner ov={null} error="boom" />)).toContain('Backend unreachable')
   })
   test('empty states render without fabricated data', () => {
-    expect(renderToStaticMarkup(<BidList m={pending} />)).toContain('requesting signed quotes')
+    expect(renderToStaticMarkup(<BidList m={pending} />)).toContain('Public auction is open')
     expect(renderToStaticMarkup(<EvidencePanel m={pending} />)).toContain('No evidence has been submitted')
     expect(renderToStaticMarkup(<AgentTrack m={pending} />)).toContain('Agent progress')
   })

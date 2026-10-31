@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "studio-app",
+      "name": "a2a-marketplace",
       "dependencies": {
         "@circle-fin/adapter-viem-v2": "^1.19.2",
         "@circle-fin/app-kit": "^1.18.0",

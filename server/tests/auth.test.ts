@@ -18,11 +18,12 @@ const { handle, deps } = await import('../http')
 const { authenticate, issueChallenge, resetAuthForTests, AuthError } = await import('../auth')
 const { missions } = await import('../store')
 const { createMission } = await import('../pipeline')
+const { decide } = await import('../agents/buyer')
 const { account } = await import('../env')
 const { CHAIN_ID, requireDeployment } = await import('../chain')
 const { makeFixtureObservation } = await import('../fixture')
 const { hashRequestBody } = await import('../../src/shared/canonical')
-const { apiAuthDomain, apiAuthTypes } = await import('../../src/shared/typed')
+const { apiAuthDomain, apiAuthTypes, quoteDomain, quoteTypes, tileIdOf } = await import('../../src/shared/typed')
 type Challenge = import('../../src/shared/typed').ApiChallenge
 
 // Test files share one module instance (and so one store) in a single bun process: clean up once, at exit.
@@ -41,6 +42,7 @@ beforeEach(() => {
   for (const m of missions.all()) m.stage = 'settled' // free the tile; these test missions are never advanced
   kicked = []
   deps.kick = (m) => void kicked.push(m.id)
+  deps.prepareExternal = () => Promise.resolve() // Role/auth tests do not connect to a live escrow.
   deps.authz = {
     readPolicy: (op) =>
       Promise.resolve(
@@ -75,7 +77,7 @@ async function sign(acct: PrivateKeyAccount, c: Challenge) {
 async function signedPost(acct: PrivateKeyAccount, path: string, signBody: unknown, sendBody: unknown = signBody) {
   const c = await getChallenge(path, hashRequestBody(signBody))
   const signature = await sign(acct, c)
-  const authorization = `FieldQuest nonce=${c.nonce}, signature=${signature}`
+  const authorization = `A2AMarket nonce=${c.nonce}, signature=${signature}`
   const res = await handle(new Request(url(path), { method: 'POST', headers: { authorization }, body: JSON.stringify(sendBody) }))
   return { res, authorization, c, signature }
 }
@@ -102,7 +104,7 @@ function fundedMission(tile: string) {
 describe('unauthenticated writes are rejected', () => {
   test('every mutating route returns 401 without a signature and changes nothing', async () => {
     const before = missions.all().length
-    for (const path of ['/missions', '/missions/abc/observation', '/missions/abc/fixture', '/missions/abc/challenge', '/missions/abc/arbiter']) {
+    for (const path of ['/missions', '/missions/abc/quotes', '/missions/abc/observation', '/missions/abc/fixture', '/missions/abc/challenge', '/missions/abc/arbiter']) {
       const res = await handle(new Request(url(path), { method: 'POST', body: JSON.stringify({ tile: 'F1', providerWins: true }) }))
       expect(res.status).toBe(401)
       expect(await codeOf(res)).toBe('unauthenticated')
@@ -111,7 +113,7 @@ describe('unauthenticated writes are rejected', () => {
     expect(kicked.length).toBe(0)
   })
   test('malformed header and unknown nonce are rejected', async () => {
-    for (const authorization of ['Bearer abc', 'FieldQuest nonce=0x12, signature=0x34', `FieldQuest nonce=0x${'11'.repeat(32)}, signature=0x${'22'.repeat(65)}`]) {
+    for (const authorization of ['Bearer abc', 'A2AMarket nonce=0x12, signature=0x34', `A2AMarket nonce=0x${'11'.repeat(32)}, signature=0x${'22'.repeat(65)}`]) {
       const res = await handle(new Request(url('/missions'), { method: 'POST', headers: { authorization }, body: '{}' }))
       expect(res.status).toBe(401)
     }
@@ -125,6 +127,31 @@ describe('unauthenticated writes are rejected', () => {
 })
 
 describe('valid wallet signatures', () => {
+  test('an external provider can submit one independently signed quote', async () => {
+    const m = createMission({ tile: 'E4', scenario: 'custom', budgetUsdc: '1', operator: operator.address })
+    const quote = {
+      provider: provider.address, providerName: 'External Agent', priceUsdc: '400000', etaSec: 300,
+      evidenceCapability: 'field-operator', validUntil: m.spec.deadlineUnix,
+      tileId: tileIdOf(m.spec.tile), specHash: m.specHash,
+    }
+    const signature = await provider.signTypedData({ domain: quoteDomain(CHAIN_ID), types: quoteTypes, primaryType: 'Quote', message: {
+      provider: provider.address, specHash: m.specHash, tileId: quote.tileId, priceUsdc: 400000n,
+      etaSec: 300n, validUntil: BigInt(quote.validUntil), capability: quote.evidenceCapability,
+    } })
+    const body = { ...quote, signature }
+    const [first, duplicate] = await Promise.all([
+      signedPost(provider, `/missions/${m.id}/quotes`, body),
+      signedPost(provider, `/missions/${m.id}/quotes`, body),
+    ])
+    expect([first.res.status, duplicate.res.status].sort()).toEqual([201, 409])
+    expect(m.quotes.length).toBe(1)
+    expect(m.quotes[0].simulated).toBe(false)
+    const forged = await signedPost(stranger, `/missions/${m.id}/quotes`, body)
+    expect(forged.res.status).toBe(403)
+    await decide(m)
+    expect(m.decision?.scored[0].quote.provider).toBe(provider.address)
+    expect(m.decision?.chosenQuoteId).toBe(m.quotes[0].quoteId)
+  })
   test('an authorised operator can open a mission; the operator is the recovered signer', async () => {
     const { res } = await signedPost(operator, '/missions', { tile: 'F1', scenario: 'custom', budgetUsdc: '1' })
     expect(res.status).toBe(201)
@@ -172,7 +199,7 @@ describe('replay, tampering, expiry', () => {
   test('key order and whitespace do not matter, content does', async () => {
     const signBody = { tile: 'F1', scenario: 'custom', budgetUsdc: '1' }
     const c = await getChallenge('/missions', hashRequestBody(signBody))
-    const authorization = `FieldQuest nonce=${c.nonce}, signature=${await sign(operator, c)}`
+    const authorization = `A2AMarket nonce=${c.nonce}, signature=${await sign(operator, c)}`
     const reordered = '{ "budgetUsdc": "1",   "scenario":"custom", "tile":"F1" }'
     const res = await handle(new Request(url('/missions'), { method: 'POST', headers: { authorization }, body: reordered }))
     expect(res.status).toBe(201)
@@ -181,14 +208,14 @@ describe('replay, tampering, expiry', () => {
     const a = fundedMission('F2')
     const body = {}
     const c = await getChallenge(`/missions/${a.id}/challenge`, hashRequestBody(body))
-    const authorization = `FieldQuest nonce=${c.nonce}, signature=${await sign(operator, c)}`
+    const authorization = `A2AMarket nonce=${c.nonce}, signature=${await sign(operator, c)}`
     const res = await handle(new Request(url(`/missions/${a.id}/arbiter`), { method: 'POST', headers: { authorization }, body: JSON.stringify(body) }))
     expect(res.status).toBe(401)
     expect(await codeOf(res)).toBe('challenge_mismatch')
   })
   test('a signature over a forged challenge (client-chosen nonce) is rejected', async () => {
     const forged: Challenge = { statement: 'x', method: 'POST', path: '/missions', bodyHash: hashRequestBody({}), nonce: `0x${'ab'.repeat(32)}`, issuedAt: 1, expiresAt: 9_999_999_999, chainId: CHAIN_ID }
-    const authorization = `FieldQuest nonce=${forged.nonce}, signature=${await operator.signTypedData({
+    const authorization = `A2AMarket nonce=${forged.nonce}, signature=${await operator.signTypedData({
       domain: apiAuthDomain(CHAIN_ID),
       types: apiAuthTypes,
       primaryType: 'ApiRequest',
@@ -205,7 +232,7 @@ describe('replay, tampering, expiry', () => {
     const sig = await sign(operator, c)
     let err: unknown
     try {
-      await authenticate({ method: 'POST', path: '/missions', body, authorization: `FieldQuest nonce=${c.nonce}, signature=${sig}`, chainId: CHAIN_ID })
+      await authenticate({ method: 'POST', path: '/missions', body, authorization: `A2AMarket nonce=${c.nonce}, signature=${sig}`, chainId: CHAIN_ID })
     } catch (e) {
       err = e
     }
@@ -218,7 +245,7 @@ describe('replay, tampering, expiry', () => {
     const sig = await sign(operator, c)
     let code = ''
     try {
-      await authenticate({ method: 'POST', path: '/missions', body, authorization: `FieldQuest nonce=${c.nonce}, signature=${sig}`, chainId: CHAIN_ID + 1 })
+      await authenticate({ method: 'POST', path: '/missions', body, authorization: `A2AMarket nonce=${c.nonce}, signature=${sig}`, chainId: CHAIN_ID + 1 })
     } catch (e) {
       code = (e as InstanceType<typeof AuthError>).code
     }

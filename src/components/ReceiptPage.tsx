@@ -111,7 +111,7 @@ export function ReceiptPage({ refId }: { refId: string }) {
               <div>
                 <div className="label">Public receipt: evidence and payment</div>
                 <h1 className="display text-3xl font-bold">
-                  Tile {data.spec?.tile ?? data.tile ?? '?'} <span className="text-[var(--subtle)]">mission #{data.onchainId}</span>
+                  Request {data.spec?.tile ?? data.tile ?? '?'} <span className="text-[var(--subtle)]">mission #{data.onchainId}</span>
                 </h1>
               </div>
               <div className="flex flex-wrap gap-1.5">

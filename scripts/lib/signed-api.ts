@@ -26,7 +26,7 @@ export async function signedPost<T>(api: string, signer: ReturnType<typeof accou
   })
   const res = await fetch(api + path, {
     method: 'POST',
-    headers: { 'content-type': 'application/json', authorization: `FieldQuest nonce=${c.nonce}, signature=${signature}` },
+    headers: { 'content-type': 'application/json', authorization: `A2AMarket nonce=${c.nonce}, signature=${signature}` },
     body: JSON.stringify(body),
   })
   const json = (await res.json()) as T & { error?: string }

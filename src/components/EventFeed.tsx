@@ -22,13 +22,13 @@ export function EventFeed({ ov }: { ov: Overview | null }) {
       </div>
       {error ? <p className="text-xs text-[var(--danger)]">Feed unavailable: {error}</p> : null}
       {loading && !data ? <p className="text-sm text-[var(--subtle)]">Loading...</p> : null}
-      {data && data.length === 0 ? <Empty title="Nothing has happened yet">Open a mission on any fogged tile and the agents will start working.</Empty> : null}
+      {data && data.length === 0 ? <Empty title="Nothing has happened yet">Open a request in an available slot and the agents will start working.</Empty> : null}
       <ul className="max-h-[380px] space-y-2 overflow-y-auto pr-1" aria-live="polite">
         {data?.map((e, i) => (
           <li key={`${e.at}-${i}`} className="border-l-2 pl-3 text-xs" style={{ borderColor: e.level === 'error' ? 'var(--danger)' : e.level === 'warn' ? 'var(--warn)' : 'var(--border)' }}>
             <div className="flex flex-wrap items-center gap-2 text-[var(--subtle)]">
               <span className="font-semibold text-[var(--ink-2)]">{AGENT[e.agent] ?? e.agent}</span>
-              <span>tile {e.tile}</span>
+              <span>request {e.tile}</span>
               <span>{ago(e.at)}</span>
               {e.data?.txHash && ov ? <TxLink chainId={ov.chainId} hash={e.data.txHash} /> : null}
             </div>

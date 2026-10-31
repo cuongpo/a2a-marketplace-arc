@@ -128,6 +128,8 @@ export interface MissionRecord {
   scenario: 'accept' | 'reject' | 'dispute' | 'custom'
   spec: MissionSpec
   specHash: Hex
+  /** Public-bid close time. Absent on legacy scripted missions. */
+  quoteDeadlineUnix?: number
   stage: StageId
   stageNote?: string
   quotes: SignedQuote[]

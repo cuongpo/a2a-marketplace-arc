@@ -6,7 +6,7 @@ export function EvidencePanel({ m }: { m: PMission }) {
   const b = m.evidencePreview
   const v = m.verdict
   if (!b && !v) {
-    return <Empty title="Evidence">No evidence has been submitted onchain yet. The tile stays in fog until a signed reading is committed and verified.</Empty>
+    return <Empty title="Evidence">No evidence has been submitted onchain yet. The request stays in progress until a signed reading is committed and verified.</Empty>
   }
   return (
     <div className="space-y-3">

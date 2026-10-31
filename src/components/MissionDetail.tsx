@@ -4,6 +4,8 @@ import { navigate, usdc, type Overview, type PMission } from '@/lib/api'
 import { ActionPanel, fmtLeft } from './ActionPanel'
 import { AgentTrack } from './AgentTrack'
 import { BidList } from './BidList'
+import { ProviderBid } from './ProviderBid'
+import { ProviderFulfillment } from './ProviderFulfillment'
 import { EvidencePanel } from './EvidencePanel'
 import { Badge, ErrorBox, Stat, TxLink } from './ui'
 
@@ -24,7 +26,7 @@ export function MissionDetail({ m, ov, onChange }: { m: PMission; ov: Overview |
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div>
             <div className="label">Mission {m.chain ? `#${m.chain.onchainId}` : m.id}</div>
-            <h2 className="display text-2xl font-bold">Tile {m.spec.tile}</h2>
+            <h2 className="display text-2xl font-bold">Request {m.spec.tile}</h2>
           </div>
           <div className="flex flex-wrap gap-1.5">
             <Badge tone={tone}>{m.onchain?.status ?? m.stage}</Badge>
@@ -62,6 +64,8 @@ export function MissionDetail({ m, ov, onChange }: { m: PMission; ov: Overview |
 
       <section className="card space-y-4 p-4 sm:p-5">
         <BidList m={m} />
+        <ProviderBid m={m} ov={ov} onChange={onChange} />
+        <ProviderFulfillment m={m} ov={ov} onChange={onChange} />
         <ActionPanel m={m} ov={ov} onChange={onChange} />
         <EvidencePanel m={m} />
       </section>

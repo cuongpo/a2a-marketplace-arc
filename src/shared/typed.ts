@@ -15,7 +15,7 @@ export const escrowDomain = (chainId: number, escrow: Address) =>
   ({ name: 'FieldQuest MissionEscrow', version: '1', chainId, verifyingContract: escrow }) as const
 
 /** Off-chain only: provider quote signatures (no verifying contract). */
-export const quoteDomain = (chainId: number) => ({ name: 'FieldQuest Quote', version: '1', chainId }) as const
+export const quoteDomain = (chainId: number) => ({ name: 'A2A Marketplace Quote', version: '1', chainId }) as const
 
 export const readingTypes = {
   Reading: [
@@ -77,7 +77,7 @@ export const OUTCOME_NAMES = ['None', 'ProviderPaid', 'BuyerRefunded', 'Split', 
 // ---- Wallet-signed API authentication (EIP-712, off-chain only) ----
 
 /** Domain binds the signature to this API and to the chain id. No verifying contract: nothing is ever sent onchain. */
-export const apiAuthDomain = (chainId: number) => ({ name: 'FieldQuest API', version: '1', chainId }) as const
+export const apiAuthDomain = (chainId: number) => ({ name: 'A2A Marketplace API', version: '1', chainId }) as const
 
 export const apiAuthTypes = {
   ApiRequest: [
@@ -91,7 +91,7 @@ export const apiAuthTypes = {
   ],
 } as const
 
-export const API_AUTH_STATEMENT = 'Authorize this FieldQuest API request. Signing sends no transaction and moves no funds.'
+export const API_AUTH_STATEMENT = 'Authorize this A2A Marketplace API request. Signing sends no transaction and moves no funds.'
 
 export interface ApiChallenge {
   statement: string

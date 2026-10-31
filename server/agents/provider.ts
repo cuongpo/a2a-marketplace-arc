@@ -28,8 +28,8 @@ export interface ProviderProfile {
 }
 
 export const PROVIDERS: ProviderProfile[] = [
-  { role: 'providerA', sensor: 'sensorA', name: 'Delta Gauge Co-op', capability: 'signed-device', etaSec: 600 },
-  { role: 'providerB', sensor: 'sensorB', name: 'Paddy Scout Network', capability: 'field-operator', etaSec: 1200 },
+  { role: 'providerA', sensor: 'sensorA', name: 'Signal Data Agent', capability: 'signed-device', etaSec: 600 },
+  { role: 'providerB', sensor: 'sensorB', name: 'Atlas Data Agent', capability: 'field-operator', etaSec: 1200 },
 ]
 
 export function profileByAddress(addr: Address): ProviderProfile | undefined {

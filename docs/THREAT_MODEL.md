@@ -55,24 +55,25 @@ Design choice: when the arbiter is silent, the independently signed verifier ver
 - Challenge griefing: a losing party can delay by challenging once; delay is bounded by the 7 day arbiter timeout and there is no bond. A bond is a recommended improvement for production.
 - Backend key custody: on testnet the role keys live in the backend's `.env` and never reach the browser. On mainnet the server refuses to use them. Mainnet roles must be separate wallets you control; the arbiter must be a human-controlled wallet.
 - Public API: reads are public. Every mutating endpoint requires a wallet-signed request (next section). The API also validates input, caps body size, rate limits challenges and writes, never serves private evidence bodies, and the demo guard limits a mission budget to 5 USDC.
-- Privacy: only hashes and the reading value are public. Fictional plot ids are used; replace them only with locations you have rights and consent to publish.
+- Privacy: only hashes and the reading value are public. A2A request slot ids are abstract; do not publish sensitive locations without rights and consent.
 
 ## API authentication and authorisation
 
-The backend holds funded demo role keys, so an unauthenticated write endpoint would let anyone make those keys act. Every mutating endpoint (`POST /missions`, `/missions/:id/observation`, `/fixture`, `/challenge`, `/arbiter`) therefore needs an EIP-712 wallet signature. Reads (map, feed, missions, receipts, evidence previews, vault status) stay public.
+The backend holds funded demo role keys, so an unauthenticated write endpoint would let anyone make those keys act. Every mutating endpoint (`POST /missions`, `/missions/:id/quotes`, `/observation`, `/fixture`, `/challenge`, `/arbiter`) therefore needs an EIP-712 wallet signature. Reads (request board, feed, missions, receipts, evidence previews, vault status) stay public.
 
 Flow (`server/auth.ts`):
 
 1. The client posts `{method, path, bodyHash}` to `POST /auth/challenge`. `bodyHash` is keccak256 of the canonical JSON of the body (sorted keys, no whitespace), computed by the client over exactly what it will send.
-2. The server mints a 32-byte random nonce, stores it in memory with the method, normalised path, body hash and chain id, and sets a 120 second expiry. Only the paths of the five mutating routes can get a challenge.
-3. The wallet signs the typed data `ApiRequest(statement, method, path, bodyHash, nonce, issuedAt, expiresAt)` under the domain `FieldQuest API v1` on the chain id. Signing sends no transaction and moves no funds.
-4. The real request carries `Authorization: FieldQuest nonce=0x..., signature=0x...`. The server looks the nonce up, marks it used immediately (first presentation consumes it, success or not), then checks expiry, method, path, chain id and that the received body hashes to what was signed. It rebuilds the typed data from its own stored copy, never from client input, and recovers the signer address.
+2. The server mints a 32-byte random nonce, stores it in memory with the method, normalised path, body hash and chain id, and sets a 120 second expiry. Only listed mutating routes can get a challenge.
+3. The wallet signs the typed data `ApiRequest(statement, method, path, bodyHash, nonce, issuedAt, expiresAt)` under the domain `A2A Marketplace API v1` on the chain id. Signing sends no transaction and moves no funds.
+4. The real request carries `Authorization: A2AMarket nonce=0x..., signature=0x...`. The server looks the nonce up, marks it used immediately (first presentation consumes it, success or not), then checks expiry, method, path, chain id and that the received body hashes to what was signed. It rebuilds the typed data from its own stored copy, never from client input, and recovers the signer address.
 
 Roles (`server/authz.ts`) are decided only from the recovered address plus onchain and persisted state:
 
 | Action | Required signer |
 |---|---|
 | Open a mission | A wallet whose vault policy currently names this buyer agent as executor, not paused, not expired. The mission's operator is the signer; a body that names another operator is refused. |
+| Submit a public quote | The provider wallet named in the quote. Its separate EIP-712 Quote signature is verified before the bid enters the auction. Only one quote per wallet per open request. |
 | Upload evidence, or feed the simulated fixture | The provider wallet bound to that mission (recorded when the buyer agent funded it). |
 | Challenge as operator through the API | The mission's operator. The browser instead sends `challengeMission` as a normal wallet transaction. |
 | Arbitrate | The `arbiter` address stored in the escrow contract. The server additionally needs to hold that key to act; otherwise it answers 409 and the arbiter calls `resolve` from their own wallet. |
@@ -98,6 +99,9 @@ Limits of this design:
 
 - Verifier and arbiter are single addresses in this version.
 - Quote signatures are checked by the buyer agent off-chain and only their hash is committed onchain.
+- An open auction chooses one provider; the current escrow does not support quorum or split payouts to multiple providers.
+- An external provider must accept, submit evidence and withdraw with its own wallet. The backend prepares the content-addressed bundle and verifies registry readiness, but cannot sign these transactions for the provider.
+- The manual wallet-as-signer option proves only wallet control, never that a physical sensor observed the reading.
 - The reference gauge (second source) is a simulated fixture.
 - Pooled vault design means all operators share one contract; operators trust only escrows fixed at its construction.
 - The deployed testnet contracts were deployed by the platform deployer account; they have no owner so there is nothing to administer.

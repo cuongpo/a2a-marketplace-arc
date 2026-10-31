@@ -14,8 +14,8 @@
   --subtle: #94a3b8;
   --border: rgba(255, 255, 255, 0.12);
   --border-strong: rgba(203, 219, 242, 0.55);
-  --accent: #acc6e9;
-  --accent-hover: #cbdbf2;
+  --accent: #70e1c3;
+  --accent-hover: #9af0d8;
   --success: #8dd89f;
   --danger: #e86d7a;
   --warn: #f1c27a;
@@ -46,21 +46,21 @@ body {
 .mono {
   font-family: 'JetBrains Mono', Menlo, monospace;
 }
-.farm-app-header {
-  border-bottom: 1px solid rgba(166, 206, 175, .12);
+.market-app-header {
+  border-bottom: 1px solid rgba(116, 225, 196, .16);
 }
-.farm-brand-icon {
-  border: 2px solid #8bb478;
-  border-radius: 5px;
-  background: #234c3e;
-  box-shadow: 3px 3px 0 #0d1722;
+.market-brand-icon {
+  border: 1px solid #74e1c4;
+  border-radius: 10px;
+  background: #173f43;
+  color: #8debd0;
+  box-shadow: 0 0 20px #64e3c02b;
 }
-.farm-brand-icon img { image-rendering: pixelated; }
-.farm-brand-name {
-  color: #f4e3ab;
-  font-family: 'Pixelify Sans', Menlo, monospace;
-  letter-spacing: .02em;
-  font-size: 25px;
+.market-brand-name {
+  color: #f1fff9;
+  font-family: 'Space Grotesk', sans-serif;
+  letter-spacing: -.045em;
+  font-size: 24px;
 }
 .num {
   font-variant-numeric: tabular-nums;
@@ -147,171 +147,6 @@ textarea {
 textarea {
   padding: 10px 12px;
   min-height: 96px;
-}
-
-/* Field board. Terrain art is decorative; only fog, outlines, chips and readings reflect real mission state. */
-.board {
-  position: relative;
-  border-radius: 18px;
-  padding: 10px;
-  background: linear-gradient(180deg, rgba(8, 17, 31, 0.95), rgba(13, 27, 47, 0.95));
-  border: 1px solid var(--border);
-  box-shadow: inset 0 0 48px rgba(0, 0, 0, 0.4);
-}
-.board-grid {
-  display: grid;
-  grid-template-columns: 18px repeat(6, minmax(0, 1fr));
-  gap: 5px;
-  align-items: stretch;
-}
-@media (min-width: 640px) {
-  .board {
-    padding: 14px;
-  }
-  .board-grid {
-    grid-template-columns: 22px repeat(6, minmax(0, 1fr));
-    gap: 8px;
-  }
-}
-.axis {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  color: var(--subtle);
-  font-family: 'JetBrains Mono', Menlo, monospace;
-}
-.tile {
-  position: relative;
-  isolation: isolate;
-  aspect-ratio: 1 / 1;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  color: var(--ink);
-  cursor: pointer;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: space-between;
-  padding: 5px;
-  text-align: left;
-  transition: border-color 0.15s, transform 0.12s, box-shadow 0.15s;
-}
-@media (min-width: 640px) {
-  .tile {
-    padding: 8px;
-    border-radius: 12px;
-  }
-}
-.tile:hover {
-  border-color: var(--border-strong);
-  transform: translateY(-1px);
-}
-.tile[aria-pressed='true'] {
-  border-color: #fff;
-  box-shadow: 0 0 0 2px rgba(172, 198, 233, 0.55), 0 6px 18px rgba(0, 0, 0, 0.35);
-  z-index: 2;
-}
-.terrain,
-.fogveil,
-.stamp {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-.terrain {
-  z-index: -3;
-}
-.terrain-paddy {
-  background: repeating-linear-gradient(90deg, #2a4636 0 5px, #34543f 5px 10px);
-}
-.terrain-wet {
-  background: repeating-linear-gradient(0deg, #29474f 0 6px, #315a5e 6px 12px);
-}
-.terrain-canal {
-  background: linear-gradient(115deg, #2a4636 0 36%, #2f5d7c 36% 64%, #2a4636 64% 100%);
-}
-.terrain-levee {
-  background: repeating-linear-gradient(45deg, #4a4733 0 7px, #3d3b2b 7px 14px);
-}
-.terrain-pond {
-  background: radial-gradient(circle at 50% 55%, #2f5d7c 0 32%, #2a4636 33% 100%);
-}
-.fogveil {
-  z-index: -2;
-  opacity: 0;
-  background:
-    radial-gradient(ellipse at 25% 30%, rgba(200, 214, 232, 0.34), transparent 60%),
-    radial-gradient(ellipse at 78% 72%, rgba(200, 214, 232, 0.26), transparent 56%),
-    rgba(9, 18, 33, 0.8);
-  background-size: 160% 160%, 160% 160%, auto;
-  backdrop-filter: blur(1.5px);
-  transition: opacity 0.6s ease;
-}
-.tile-fog .fogveil {
-  opacity: 1;
-  animation: fog-drift 16s ease-in-out infinite alternate;
-}
-.tile-fog {
-  color: var(--muted);
-}
-@keyframes fog-drift {
-  from {
-    background-position: 0% 0%, 100% 100%, 0 0;
-  }
-  to {
-    background-position: 100% 60%, 0% 20%, 0 0;
-  }
-}
-.stamp {
-  z-index: -1;
-}
-.tile-active {
-  border-color: rgba(172, 198, 233, 0.85);
-}
-.tile-active .stamp {
-  background: conic-gradient(from 0deg, rgba(172, 198, 233, 0.5), rgba(172, 198, 233, 0) 28%, rgba(172, 198, 233, 0) 100%);
-  animation: sweep 3.2s linear infinite;
-}
-@keyframes sweep {
-  to {
-    transform: rotate(360deg);
-  }
-}
-.tile-revealed {
-  border-color: rgba(141, 216, 159, 0.9);
-  box-shadow: 0 0 0 1px rgba(141, 216, 159, 0.4), 0 0 18px rgba(141, 216, 159, 0.18);
-}
-.tile-revealed .stamp {
-  background: linear-gradient(180deg, rgba(141, 216, 159, 0.04), rgba(9, 18, 33, 0.72));
-}
-.tile-rejected {
-  border-color: rgba(232, 109, 122, 0.8);
-}
-.tile-rejected .stamp {
-  background: repeating-linear-gradient(135deg, rgba(232, 109, 122, 0.3) 0 5px, rgba(9, 18, 33, 0.66) 5px 11px);
-}
-.tile-expired,
-.tile-blocked {
-  border-color: rgba(241, 194, 122, 0.8);
-}
-.tile-expired .stamp,
-.tile-blocked .stamp {
-  background: repeating-linear-gradient(45deg, rgba(241, 194, 122, 0.24) 0 5px, rgba(9, 18, 33, 0.66) 5px 11px);
-}
-.tilechip {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  padding: 2px 5px;
-  border-radius: 999px;
-  background: rgba(9, 18, 33, 0.82);
-  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 /* Agent lanes: each agent has its own hue and its own real progress */

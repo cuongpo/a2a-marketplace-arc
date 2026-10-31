@@ -1,26 +1,26 @@
-# FieldQuest
+# A2A Marketplace
 
-A mission-control game for a real market in verified field observations. An operator gives a buyer agent an objective and a USDC budget (for example: a water-level reading for map tile B2 within a deadline). Agents compete to fulfil it, evidence is checked, and USDC is released from an escrow on Arc only when the checks pass. Every finished tile has a public receipt anyone can open without a wallet.
+A wallet-to-wallet marketplace for verified agent work on Arc. An operator opens a data request with a USDC budget. Independent provider wallets submit EIP-712 signed bids during a public auction. The buyer agent ranks eligible bids, spends only within the operator vault policy, and funds an escrow for the winner. The winner accepts the assignment, commits signed evidence, and receives USDC only after verification and the challenge window. Every trade has a public receipt.
 
 Built with [Arc Studio](https://studio.arc.io)
 
-> Unaudited research software. The contracts have been reviewed and tested but not independently audited. Default mode is Arc Testnet with test USDC. Sensor "fixtures" in the demo are simulated and are labelled as such everywhere they appear.
+> Unaudited research software. Default mode is Arc Testnet with test USDC. This release offers one service category: signed water-level data. Manual wallet signing proves account control, not the truth of a physical measurement. Demo fixtures are simulated and labelled.
 
 ## What you can do
 
-- Explore the Mekong Delta field board (fictional plots), the live feed and every public receipt without a wallet.
-- Connect the operator wallet that owns a vault budget, pick a fogged tile and sign to open a mission with a budget and deadline. Signing sends no transaction.
-- Watch a buyer agent collect signed provider bids, rank them, and fund an escrow from your vault only inside your spending policy.
-- The provider wallet bound to a mission can sign to feed a simulated sensor reading, or paste a signed reading from a real device or field operator.
+- Explore the marketplace request board, live feed and public receipts without a wallet.
+- Connect an operator wallet with a vault budget, choose an available request slot and open a public A2A auction. Signing the request sends no transaction.
+- Connect any external provider wallet to submit one independently signed bid. The buyer agent checks its signature, price, ETA, evidence capability and historical reliability when bidding closes.
+- The winner uses its own wallet to accept the onchain assignment, register a signer, prepare evidence and commit its hash to escrow. Managed demo providers remain available only in scripted testnet journeys.
 - See the verifier agent's check list, a human dispute route for ambiguous evidence, and the settlement (payout or refund) with explorer links.
-- Open a public receipt that recomputes the evidence and reading hashes in your browser.
+- Withdraw credited USDC to the winning provider wallet and open a public receipt that recomputes evidence and reading hashes in your browser.
 - Set up your own operator vault from your wallet: deposit, authorise the buyer agent under caps, pause, or reclaim unspent funds.
 
 ## Tech stack
 
 Vite, React, TypeScript, Tailwind, wagmi + viem, framer-motion. Solidity 0.8.28 with OpenZeppelin and Foundry. A Bun backend runs the buyer, provider, verifier and settlement workers with persisted, idempotent jobs.
 
-The field map uses [Kenney Tiny Farm](https://kenney.nl/assets/tiny-farm) pixel art under CC0. A copy of its license is in `public/assets/kenney-tiny-farm/License.txt`. Plot overlays, mission status, and scout movement are FieldQuest UI code; the art does not represent physical survey data.
+The public product name is **A2A Marketplace**. Existing testnet contracts retain the `FieldQuest` EIP-712 names and `fieldquest.*` evidence schemas: those cryptographic identifiers are immutable for this deployment and must stay unchanged to verify existing signatures and receipts. The new marketplace UI does not use farm art.
 
 ## Development
 
@@ -50,7 +50,9 @@ Reading is open to everyone. Every action that changes something needs a wallet 
 - Supply evidence or use the simulated fixture: the provider wallet bound to that mission.
 - Rule on a dispute: the arbiter wallet.
 
-The demo role wallets (providers, verifier, arbiter, demo operator) are held by the backend, so in a browser you can try the full flow by setting up your own vault ("Budget and wallets"), opening a scripted mission with the simulated fixture enabled, and watching the agents work. Steps that belong to a server-held wallet (for example uploading evidence for provider A) are done by the scripts, which sign with the same protocol using the keys in `.env`.
+The demo role wallets (providers, verifier, arbiter, demo operator) are held by the backend for scripted testnet journeys. Open A2A auctions accept externally controlled provider wallets; the server cannot accept or submit evidence for them. The winning external wallet must take those actions itself. Only a single provider can win and be paid per request under the current escrow contract.
+
+**Deployment status:** deployed on Arc Testnet only. `src/deployments/arc-mainnet.json` has no contract addresses. Mainnet deployment and real USDC movement have not been performed; see `docs/MAINNET_RUNBOOK.md` before any mainnet use.
 
 Environment variables (names only, see `.env.example`):
 

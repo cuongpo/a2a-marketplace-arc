@@ -2,18 +2,19 @@ import { isAddress, type Address } from 'viem'
 import { hasRole, account, NETWORK } from './env'
 import { CHAIN_ID, errMsg } from './chain'
 import { getEvidence, missions, recentFeed } from './store'
-import { HttpError, advance, arbiterResolve, createMission, fixtureObservation, operatorChallenge, submitObservation } from './pipeline'
+import { HttpError, advance, arbiterResolve, createMission, fixtureObservation, operatorChallenge, prepareExternalEvidence, submitObservation, submitQuote } from './pipeline'
 import { jsonSafe, overview, publicMission, receipt, tiles, vaultFor } from './api'
 import { AuthError, authenticate, issueChallenge } from './auth'
 import { liveDeps, requireArbiter, requireAuthorisedOperator, requireBoundProvider, requireMissionOperator, same, type AuthzDeps } from './authz'
-import type { MissionRecord } from '../src/shared/types'
+import type { MissionRecord, SignedReadingInput } from '../src/shared/types'
 
 const MAX_BODY = 64 * 1024
 
 /** Swappable in tests. Production uses the live chain-backed deps. */
-export const deps: { authz: AuthzDeps; kick: (m: MissionRecord) => void } = {
+export const deps: { authz: AuthzDeps; kick: (m: MissionRecord) => void; prepareExternal: (m: MissionRecord, o: SignedReadingInput) => Promise<void> } = {
   authz: liveDeps,
   kick: (m) => void advance(m).catch(() => undefined),
+  prepareExternal: prepareExternalEvidence,
 }
 
 class Limiter {
@@ -72,10 +73,15 @@ async function mutate(req: Request, path: string): Promise<Response> {
   }
 
   let r: RegExpMatchArray | null
+  if ((r = path.match(/^\/missions\/([\w-]+)\/quotes$/))) {
+    const m = must(r[1])
+    await submitQuote(m, body, signer)
+    return json(await publicMission(m), 201)
+  }
   if ((r = path.match(/^\/missions\/([\w-]+)\/observation$/))) {
     const m = must(r[1])
     requireBoundProvider(signer, m)
-    submitObservation(m, body)
+    await submitObservation(m, body, deps.prepareExternal)
     return json(await publicMission(m))
   }
   if ((r = path.match(/^\/missions\/([\w-]+)\/fixture$/))) {

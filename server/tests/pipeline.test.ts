@@ -159,12 +159,12 @@ describe('simulated fixture + evidence', () => {
 describe('observation upload validation', () => {
   test('rejects malformed, wrong-mission and oversized payloads', async () => {
     const m = funded(fresh('accept'))
-    expect(() => submitObservation(m, {})).toThrow(HttpError)
+    await expect(submitObservation(m, {})).rejects.toThrow(HttpError)
     const good = await makeFixtureObservation(m, 'valid', 'sensorA', m.chain!.createdAtChain)
-    expect(() => submitObservation(m, { ...good, reading: { ...good.reading, missionId: '5' } })).toThrow(/different mission/)
-    expect(() => submitObservation(m, { ...good, signature: '0x12' })).toThrow(HttpError)
-    expect(() => submitObservation(m, { ...good, rawPayload: { x: 'y'.repeat(9000) } })).toThrow(HttpError)
-    submitObservation(m, good)
+    await expect(submitObservation(m, { ...good, reading: { ...good.reading, missionId: '5' } })).rejects.toThrow(/different mission/)
+    await expect(submitObservation(m, { ...good, signature: '0x12' })).rejects.toThrow(HttpError)
+    await expect(submitObservation(m, { ...good, rawPayload: { x: 'y'.repeat(9000) } })).rejects.toThrow(HttpError)
+    await submitObservation(m, good)
     expect(m.observation?.kind).toBe('field-operator-upload')
   })
 })

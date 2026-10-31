@@ -64,8 +64,8 @@ export async function publicMission(m: MissionRecord) {
 const ROLE_LABELS: Record<string, string> = {
   operator: 'Operator (demo key, server-held)',
   buyer: 'Buyer agent (vault executor)',
-  providerA: 'Provider A: Delta Gauge Co-op',
-  providerB: 'Provider B: Paddy Scout Network',
+  providerA: 'Provider A: Signal Data Agent',
+  providerB: 'Provider B: Atlas Data Agent',
   verifier: 'Verifier agent',
   arbiter: 'Human arbiter (demo key, server-held)',
 }
@@ -142,7 +142,9 @@ export async function tiles() {
           simulated = b.provenance.simulated
         }
       }
-      grid.push({ tile, col, row, state, missionId: latest?.id, value, simulated })
+      grid.push({ tile, col, row, state, missionId: latest?.id, value, simulated,
+        bidCount: latest?.quotes.length ?? 0, budgetUsdc: latest?.spec.budgetUsdc,
+        quoteDeadlineUnix: latest?.stage === 'quoting' ? latest.quoteDeadlineUnix : undefined })
     }
   }
   return grid

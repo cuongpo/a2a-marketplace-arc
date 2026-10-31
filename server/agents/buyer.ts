@@ -19,7 +19,7 @@ const CAP_SCORE: Record<SignedQuote['evidenceCapability'], number> = {
 
 const usdc = (b: bigint) => (Number(b) / 1e6).toFixed(2)
 
-async function verifyQuote(q: SignedQuote): Promise<boolean> {
+export async function verifyQuote(q: SignedQuote): Promise<boolean> {
   try {
     const signer = await recoverTypedDataAddress({
       domain: quoteDomain(CHAIN_ID),
@@ -44,10 +44,13 @@ async function verifyQuote(q: SignedQuote): Promise<boolean> {
 
 /** Request >= 2 signed quotes, verify signatures, rank, and record the decision with its rationale. */
 export async function decide(m: MissionRecord) {
-  const quotes: SignedQuote[] = []
-  for (const p of PROVIDERS) quotes.push(await quoteFor(p, m.spec, m.specHash, m.scenario))
+  const openMarket = m.quoteDeadlineUnix !== undefined
+  const quotes: SignedQuote[] = openMarket ? [...m.quotes] : []
+  if (!openMarket) for (const p of PROVIDERS) quotes.push(await quoteFor(p, m.spec, m.specHash, m.scenario))
   m.quotes = quotes
-  audit(m, 'buyer', `Requested quotes from ${quotes.length} provider agents; received ${quotes.length} signed quotes (simulated providers, real wallets)`)
+  audit(m, 'buyer', openMarket
+    ? `Public bidding closed with ${quotes.length} wallet-signed provider quote(s)`
+    : `Requested quotes from ${quotes.length} demo provider agents; received ${quotes.length} signed quotes (simulated pricing, real wallets)`)
 
   const fee = config.verifierFeeUsdc
   const budget = BigInt(m.spec.budgetUsdc)

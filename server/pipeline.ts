@@ -1,17 +1,19 @@
 import { randomUUID } from 'node:crypto'
 import { getAddress, isAddress, type Address } from 'viem'
 import { account, config, hasRole } from './env'
-import { errMsg, escrowRead, nowChainSec, readMission, requireDeployment, send, waitForHash } from './chain'
+import { errMsg, escrowRead, nowChainSec, readMission, registryRead, requireDeployment, send, waitForHash } from './chain'
 import { audit, missions, recoverInterruptedJobs, runJob } from './store'
 import { ObservationRejected, recordTx, S } from './agents/common'
-import { decide, fund } from './agents/buyer'
+import { decide, fund, verifyQuote } from './agents/buyer'
 import { acceptAssignment, profileByAddress, submitEvidence, withdrawCredits } from './agents/provider'
 import { signAndSubmitVerdict } from './agents/verifier'
 import { makeFixtureObservation, type FixtureVariant } from './fixture'
+import { buildEvidence } from './evidence'
 import { agentBudgetVaultAbi, missionEscrowAbi } from '../src/shared/abis'
 import { hashCanonical } from '../src/shared/canonical'
 import { parseUsdc } from '../src/onchain-money'
-import type { MissionRecord, MissionSpec, SignedReadingInput } from '../src/shared/types'
+import type { MissionRecord, MissionSpec, SignedQuote, SignedReadingInput } from '../src/shared/types'
+import { tileIdOf } from '../src/shared/typed'
 
 export const TILE_RE = /^[A-F][1-4]$/
 const MAX_BUDGET = parseUsdc('5')
@@ -29,6 +31,7 @@ export interface CreateReq {
   autoFixture?: unknown
   requireSecondSource?: unknown
   challengeWindowSec?: unknown
+  quoteWindowSec?: unknown
 }
 
 export class HttpError extends Error {
@@ -65,6 +68,9 @@ export function createMission(req: CreateReq): MissionRecord {
   if (!Number.isInteger(minutes) || minutes < 5 || minutes > 240) throw new HttpError(400, 'deadlineMinutes must be an integer from 5 to 240')
   const cw = Number(req.challengeWindowSec ?? 45)
   if (!Number.isInteger(cw) || cw < 0 || cw > 3600) throw new HttpError(400, 'challengeWindowSec must be 0..3600 in this app')
+  const quoteWindowSec = scenario === 'custom' ? Number(req.quoteWindowSec ?? 90) : 0
+  if (scenario === 'custom' && (!Number.isInteger(quoteWindowSec) || quoteWindowSec < 30 || quoteWindowSec > 600 || quoteWindowSec >= minutes * 60 - 60))
+    throw new HttpError(400, 'quoteWindowSec must be 30..600 and leave at least 60 seconds before the mission deadline')
   let operator: Address
   if (req.operator === undefined || req.operator === '') {
     if (!hasRole('operator')) throw new HttpError(400, 'no demo operator configured; pass an operator address with an active vault policy')
@@ -78,9 +84,9 @@ export function createMission(req: CreateReq): MissionRecord {
   const spec: MissionSpec = {
     schema: 'fieldquest.mission/1',
     tile,
-    region: 'Mekong Delta rice terraces (fictional demo plots)',
-    plotId: `MKD-FIC-${tile}`,
-    objective: `Obtain a signed water-level reading (mm) for rice-field tile ${tile} within ${minutes} minutes`,
+    region: 'A2A Marketplace data services',
+    plotId: `A2A-SLOT-${tile}`,
+    objective: `Deliver a signed water-level reading (mm) for data request ${tile} within ${minutes} minutes`,
     metric: 'water_level',
     unit: 'mm',
     plausibleMin: 0,
@@ -89,7 +95,7 @@ export function createMission(req: CreateReq): MissionRecord {
     deadlineUnix: now + minutes * 60,
     challengeWindowSec: cw,
     budgetUsdc: budget.toString(),
-    requireSecondSource: req.requireSecondSource !== false,
+    requireSecondSource: req.requireSecondSource === true,
     evidenceRequirements: [
       'EIP-712 reading signed by a device key registered to the provider',
       'Observed after mission creation, no older than the max reading age',
@@ -104,6 +110,7 @@ export function createMission(req: CreateReq): MissionRecord {
     scenario,
     spec,
     specHash: hashCanonical(spec),
+    ...(scenario === 'custom' ? { quoteDeadlineUnix: now + quoteWindowSec } : {}),
     stage: 'quoting',
     quotes: [],
     txs: [],
@@ -112,8 +119,46 @@ export function createMission(req: CreateReq): MissionRecord {
     autoFixture: req.autoFixture === true,
   }
   missions.put(m)
-  audit(m, 'operator', `Mission created for tile ${tile}: budget ${str(req.budgetUsdc, '1')} USDC, deadline ${minutes} min, scenario ${scenario}. Spec hash ${m.specHash.slice(0, 12)}...`)
+  audit(m, 'operator', `A2A request ${tile} opened: budget ${str(req.budgetUsdc, '1')} USDC, deadline ${minutes} min, bid window ${quoteWindowSec}s. Spec hash ${m.specHash.slice(0, 12)}...`)
   return m
+}
+
+/** Accept a provider's independently signed quote while public bidding is open. */
+export async function submitQuote(m: MissionRecord, body: unknown, signer: Address): Promise<void> {
+  const now = Math.floor(Date.now() / 1000)
+  if (m.stage !== 'quoting' || !m.quoteDeadlineUnix || now >= m.quoteDeadlineUnix) throw new HttpError(409, 'bidding is closed')
+  const input = body && typeof body === 'object' ? body as Record<string, unknown> : {}
+  const capability = input.evidenceCapability
+  const caps = ['signed-device', 'signed-device+photo', 'field-operator']
+  if (typeof input.provider !== 'string' || !isAddress(input.provider) || input.provider.toLowerCase() !== signer.toLowerCase()) throw new HttpError(403, 'quote provider must be the connected wallet')
+  if (typeof input.providerName !== 'string' || input.providerName.trim().length < 2 || input.providerName.length > 48) throw new HttpError(400, 'providerName must be 2..48 characters')
+  if (typeof input.priceUsdc !== 'string' || !UINT.test(input.priceUsdc) || BigInt(input.priceUsdc) <= 0n || BigInt(input.priceUsdc) + config.verifierFeeUsdc > BigInt(m.spec.budgetUsdc)) throw new HttpError(400, 'quote price exceeds the available provider budget')
+  if (!Number.isInteger(input.etaSec) || Number(input.etaSec) < 60 || Number(input.etaSec) > m.spec.deadlineUnix - now) throw new HttpError(400, 'etaSec is outside the mission deadline')
+  if (!Number.isInteger(input.validUntil) || Number(input.validUntil) <= m.quoteDeadlineUnix || Number(input.validUntil) > m.spec.deadlineUnix) throw new HttpError(400, 'quote validity must cover bidding and end by the mission deadline')
+  if (!caps.includes(String(capability))) throw new HttpError(400, 'invalid evidence capability')
+  if (typeof input.signature !== 'string' || !/^0x[0-9a-fA-F]{130}$/.test(input.signature)) throw new HttpError(400, 'invalid quote signature')
+  if (typeof input.specHash !== 'string' || input.specHash.toLowerCase() !== m.specHash.toLowerCase() || typeof input.tileId !== 'string' || input.tileId.toLowerCase() !== tileIdOf(m.spec.tile).toLowerCase()) throw new HttpError(400, 'quote is for a different request')
+  if (m.quotes.some((q) => q.provider.toLowerCase() === signer.toLowerCase())) throw new HttpError(409, 'this wallet already submitted a quote')
+  const quote: SignedQuote = {
+    quoteId: hashCanonical({ provider: signer, specHash: m.specHash, signature: input.signature }).slice(0, 18),
+    provider: signer,
+    providerName: input.providerName.trim(),
+    priceUsdc: input.priceUsdc,
+    etaSec: Number(input.etaSec),
+    evidenceCapability: capability as SignedQuote['evidenceCapability'],
+    validUntil: Number(input.validUntil),
+    tileId: tileIdOf(m.spec.tile),
+    specHash: m.specHash,
+    signature: input.signature as `0x${string}`,
+    simulated: false,
+  }
+  if (!(await verifyQuote(quote))) throw new HttpError(400, 'quote signature failed verification')
+  // Signature recovery yields to other requests: repeat these checks before
+  // mutating the shared mission so concurrent submissions cannot double-bid.
+  if (m.stage !== 'quoting' || !m.quoteDeadlineUnix || Math.floor(Date.now() / 1000) >= m.quoteDeadlineUnix) throw new HttpError(409, 'bidding is closed')
+  if (m.quotes.some((q) => q.provider.toLowerCase() === signer.toLowerCase())) throw new HttpError(409, 'this wallet already submitted a quote')
+  m.quotes.push(quote)
+  audit(m, 'provider', `${quote.providerName} submitted a verified public bid of ${quote.priceUsdc} USDC base units`, 'info', { quoteId: quote.quoteId })
 }
 
 const STAGE_BY_STATUS: Record<number, MissionRecord['stage']> = {
@@ -131,7 +176,7 @@ const STAGE_BY_STATUS: Record<number, MissionRecord['stage']> = {
 export async function advance(m: MissionRecord) {
   if (isTerminal(m)) return
   if (!m.decision) {
-    if (m.stage === 'quoting') await runJob(m, 'decide', async () => decide(m))
+    if (m.stage === 'quoting' && (!m.quoteDeadlineUnix || Math.floor(Date.now() / 1000) >= m.quoteDeadlineUnix)) await runJob(m, 'decide', async () => decide(m))
     return
   }
   if (!m.chain) {
@@ -160,7 +205,7 @@ export async function advance(m: MissionRecord) {
   switch (on.status) {
     case S.Funded:
       if (now > Number(on.deadline) + MARGIN_SEC) await call('expire', [id], keeperRole, 'keeper expires unaccepted mission and credits full refund', 'keeper')
-      else await runJob(m, 'accept', (_j, setHash) => acceptAssignment(m, setHash))
+      else if (profileByAddress(m.chain.provider)) await runJob(m, 'accept', (_j, setHash) => acceptAssignment(m, setHash))
       break
     case S.Assigned:
       if (now > Number(on.deadline) + MARGIN_SEC) {
@@ -175,7 +220,7 @@ export async function advance(m: MissionRecord) {
           audit(m, 'provider', `Provider agent ingested a SIMULATED fixture reading (variant: ${variant}) from its device adapter`, 'info')
         }
       }
-      if (m.observation) {
+      if (m.observation && profileByAddress(m.chain.provider)) {
         await runJob(m, 'submit', async (_j, setHash) => {
           try {
             await submitEvidence(m, setHash)
@@ -221,7 +266,30 @@ export async function advance(m: MissionRecord) {
   }
 }
 
-export function submitObservation(m: MissionRecord, body: unknown): void {
+export async function prepareExternalEvidence(m: MissionRecord, observation: SignedReadingInput): Promise<void> {
+  if (!m.chain) throw new HttpError(409, 'mission is not funded onchain yet')
+  const on = await readMission(BigInt(m.chain.onchainId))
+  if (on.status !== S.Assigned) throw new HttpError(409, 'the external provider must accept the assignment onchain before preparing evidence')
+  if (hashCanonical(observation.rawPayload).toLowerCase() !== observation.reading.payloadHash.toLowerCase()) throw new HttpError(400, 'raw payload hash does not match the signed reading')
+  const reading = {
+    missionId: BigInt(observation.reading.missionId), tileId: observation.reading.tileId,
+    observedAt: BigInt(observation.reading.observedAt), value: BigInt(observation.reading.value),
+    unit: observation.reading.unit, nonce: BigInt(observation.reading.nonce), payloadHash: observation.reading.payloadHash,
+  }
+  const dep = requireDeployment()
+  try {
+    await registryRead('previewReading', [dep.escrow, m.chain.provider,
+      { missionId: BigInt(m.chain.onchainId), tileId: on.tileId, unit: on.unit, notBefore: on.createdAt, maxAge: on.maxReadingAge },
+      reading, observation.signature])
+  } catch (e) {
+    throw new HttpError(400, `registry rejects this reading: ${errMsg(e)}`)
+  }
+  const { evidenceHash } = await buildEvidence(m, observation)
+  m.evidenceHash = evidenceHash
+  audit(m, 'provider', `External provider prepared content-addressed evidence ${evidenceHash.slice(0, 12)}...; wallet must commit it onchain`)
+}
+
+export async function submitObservation(m: MissionRecord, body: unknown, prepareExternal = prepareExternalEvidence): Promise<void> {
   if (!m.chain) throw new HttpError(409, 'mission is not funded onchain yet')
   if (m.observation && m.jobs.submit?.status === 'done') throw new HttpError(409, 'evidence already submitted onchain')
   const o = body as Partial<SignedReadingInput> | null
@@ -232,7 +300,7 @@ export function submitObservation(m: MissionRecord, body: unknown): void {
   if (r.missionId !== m.chain.onchainId) throw new HttpError(400, 'reading is for a different mission')
   if (!o.rawPayload || typeof o.rawPayload !== 'object' || JSON.stringify(o.rawPayload).length > 8000) throw new HttpError(400, 'rawPayload missing or too large')
   const kind = o.kind === 'device-adapter' ? 'device-adapter' : 'field-operator-upload'
-  m.observation = {
+  const observation: SignedReadingInput = {
     reading: { missionId: r.missionId, tileId: r.tileId, observedAt: r.observedAt, value: String(r.value), unit: r.unit, nonce: String(r.nonce), payloadHash: r.payloadHash },
     signature: o.signature,
     rawPayload: o.rawPayload,
@@ -241,8 +309,13 @@ export function submitObservation(m: MissionRecord, body: unknown): void {
     operatorNote: typeof o.operatorNote === 'string' ? o.operatorNote.slice(0, 280) : undefined,
     photoSha256: typeof o.photoSha256 === 'string' && HEX32.test(o.photoSha256) ? (o.photoSha256) : undefined,
   }
+  if (!profileByAddress(m.chain.provider)) {
+    await prepareExternal(m, observation)
+  } else {
+    audit(m, 'provider', `Signed observation received via ${kind}; managed provider agent will validate and submit its hash`)
+  }
+  m.observation = observation
   delete m.jobs.submit
-  audit(m, 'provider', `Signed observation received via ${kind}; provider agent will validate and submit its hash`)
   missions.save()
 }
 

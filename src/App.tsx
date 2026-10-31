@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ConnectKitButton } from 'connectkit'
+import { Network } from 'lucide-react'
 import { navigate, useApi, type Overview, type PMission, type TileCell } from '@/lib/api'
 import { EventFeed } from '@/components/EventFeed'
-import { FieldGrid } from '@/components/FieldGrid'
+import { MarketplaceBoard } from '@/components/MarketplaceBoard'
 import { MissionComposer } from '@/components/MissionComposer'
 import { MissionDetail } from '@/components/MissionDetail'
 import { ModeBanner } from '@/components/ModeBanner'
@@ -51,7 +52,7 @@ function MissionControl({ ov }: { ov: Overview | null }) {
   return (
     <main className="mx-auto grid w-full max-w-[1600px] gap-4 px-3 py-4 sm:px-5 lg:grid-cols-[minmax(0,1.8fr)_minmax(350px,1fr)] lg:items-start">
       <div className="min-w-0 space-y-4">
-        {tiles.error && !tiles.data ? <Empty title="Field grid unavailable">{tiles.error}</Empty> : <FieldGrid cells={cells} selected={selected} onSelect={pick} />}
+        {tiles.error && !tiles.data ? <Empty title="Marketplace unavailable">{tiles.error}</Empty> : <MarketplaceBoard cells={cells} selected={selected} onSelect={pick} />}
         <div className="hidden lg:block"><EventFeed ov={ov} /></div>
       </div>
       <div ref={panelRef} className="min-w-0 scroll-mt-3 space-y-4">
@@ -68,8 +69,8 @@ function MissionControl({ ov }: { ov: Overview | null }) {
             <WalletsPanel ov={ov} />
           </>
         ) : !selected ? (
-          <Empty title="Select a tile">
-            Each tile is a potential information mission. Pick a fogged tile to set an objective, a USDC budget and a deadline. A buyer agent gathers competing signed bids, spends from your vault only
+          <Empty title="Select a request slot">
+            Pick an available slot to set an objective, a USDC budget and a deadline. Independent provider agents can submit signed bids. The buyer agent spends from your vault only
             within policy, and a verifier agent checks the evidence before anyone is paid. Everything here is readable without a wallet; actions ask you to sign.
           </Empty>
         ) : mission && !composing ? (
@@ -77,7 +78,7 @@ function MissionControl({ ov }: { ov: Overview | null }) {
             <MissionDetail m={mission} ov={ov} onChange={refresh} />
             {canCompose ? (
               <button type="button" className="btn btn-ghost w-full" onClick={() => setComposing(true)}>
-                Open a new mission on tile {selected}
+                Open a new request in slot {selected}
               </button>
             ) : null}
           </>
@@ -92,7 +93,7 @@ function MissionControl({ ov }: { ov: Overview | null }) {
             }}
           />
         ) : (
-          <Empty title="Loading tile">Waiting for the grid.</Empty>
+          <Empty title="Loading request">Waiting for the exchange.</Empty>
         )}
         <div className="lg:hidden"><EventFeed ov={ov} /></div>
       </div>
@@ -108,21 +109,19 @@ export default function App() {
   return (
     <div className="min-h-dvh">
       <ModeBanner ov={ov} error={error} />
-      <header className="farm-app-header mx-auto flex w-full max-w-[1600px] flex-wrap items-center justify-between gap-3 px-3 py-3 sm:px-5">
-        <button type="button" className="flex items-center gap-2 text-left" onClick={() => navigate('/')} aria-label="FieldQuest mission control">
-          <span className="farm-brand-icon flex h-10 w-10 items-center justify-center" aria-hidden="true">
-            <img src="/assets/kenney-tiny-farm/tiles/tile_0066.png" width="29" height="29" alt="" />
-          </span>
+      <header className="market-app-header mx-auto flex w-full max-w-[1600px] flex-wrap items-center justify-between gap-3 px-3 py-3 sm:px-5">
+        <button type="button" className="flex items-center gap-2 text-left" onClick={() => navigate('/')} aria-label="A2A Marketplace home">
+          <span className="market-brand-icon flex h-10 w-10 items-center justify-center" aria-hidden="true"><Network size={23} /></span>
           <span>
-            <span className="farm-brand-name block text-xl font-bold leading-none">FieldQuest</span>
-            <span className="block text-[11px] text-[var(--subtle)]">verified field observations, paid in USDC on Arc</span>
+            <span className="market-brand-name block text-xl font-bold leading-none">A2A Marketplace</span>
+            <span className="block text-[11px] text-[var(--subtle)]">agents hire agents · verified work · USDC on Arc</span>
           </span>
         </button>
         <ConnectKitButton showBalance={false} />
       </header>
       {receipt ? <ReceiptPage refId={receipt[1]} /> : <MissionControl ov={ov} />}
       <footer className="mx-auto max-w-7xl px-5 pb-2 pt-4 text-[11px] text-[var(--subtle)]">
-        Unaudited research software. Testnet USDC has no value. Sensor fixtures are simulated and are not physical measurements.
+        Unaudited research software. Testnet USDC has no value. Demo fixtures are simulated and are not independent measurements.
       </footer>
     </div>
   )

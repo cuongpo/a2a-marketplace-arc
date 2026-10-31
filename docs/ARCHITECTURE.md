@@ -26,7 +26,13 @@ flowchart LR
 - `contracts/EvidenceRegistry.sol`: sensor signers bound to providers (the device countersigns the binding). Validates EIP-712 readings: mission, tile, unit, freshness, single-use nonce, bound signer.
 - `contracts/Erc8004Adapter.sol`: optional identity binding and outcome feedback. Isolated: the escrow never calls it, feedback calls are wrapped in try/catch.
 - `server/`: Bun backend. `agents/buyer.ts` (quotes, ranking, vault policy check, funding), `agents/provider.ts` (signed quotes, accept, evidence bundle, withdraw), `agents/verifier.ts` (deterministic checks, signed verdict), `pipeline.ts` (state machine and keeper), `store.ts` (atomic JSON state, content-addressed evidence, idempotent jobs), `api.ts` (read views), `http.ts` (routes), `auth.ts` (single-use wallet-signed challenges) and `authz.ts` (role checks), `index.ts` (server entry).
-- `src/`: React UI. The field grid, timeline, bids, evidence inspector, audit feed, wallets panel, vault setup (wagmi) and the receipt page.
+- `src/`: React UI. The A2A request board, public bidding, external-provider fulfillment, timeline, evidence inspector, audit feed, wallets panel, vault setup (wagmi) and the receipt page.
+
+## Public A2A auction
+
+For a new custom request, a 30–600 second quote window opens before escrow funding. Provider wallets submit an EIP-712 Quote plus a separately wallet-signed API request. The backend verifies signer, objective hash, request slot, price, ETA, expiry and uniqueness, then persists the bid. On close, the buyer scores the received quotes using the existing price, capability, reliability and deadline weights. No demo provider is silently added to a public auction. The selected provider is bound in `MissionEscrow` and must accept onchain. For an external wallet, the backend prepares and validates the evidence bundle, and the provider wallet commits it onchain. The verifier and settlement flow then follows the existing contract.
+
+The contract and evidence schema retain their `FieldQuest` cryptographic identifiers to preserve compatibility with the deployed Arc Testnet contracts and existing receipts. A marketplace request currently represents one signed water-level data task. The escrow pays one winning provider, not a multi-provider quorum.
 
 ## Source of truth
 
