@@ -50,6 +50,12 @@ export function TradeFloor({ mission, onOpenDetails }: { mission: PMission | nul
   const total = done.escrow && mission?.chain ? BigInt(mission.chain.providerPrice) + BigInt(mission.chain.verifierFee) : null
   const bidCount = activeReplay && !done.quotes ? 0 : mission?.quotes.length ?? 0
   const current = activeReplay ? `REPLAY ${activeReplay.cursor + 1}/${milestones.length} · ${milestones[activeReplay.cursor]?.label.toUpperCase()}` : blocked ? 'REQUEST STOPPED' : paid ? 'PROVIDER PAID' : refunded ? 'BUYER REFUNDED' : split ? 'SPLIT SETTLEMENT' : done.settlement ? 'TRADE SETTLED' : mission ? `${(next ?? 'settlement').toUpperCase()} IN PROGRESS` : 'AWAITING REQUEST'
+  const speech = {
+    buyer: mission ? mission.spec.objective.length > 28 ? `Request ${mission.spec.tile}: ${mission.spec.metric.replace(/_/g, ' ')}` : mission.spec.objective : 'Create a request',
+    provider: winner ? `${usdc(BigInt(winner.priceUsdc))} USDC bid selected` : bidCount === 1 && mission?.quotes[0] ? `Bid: ${usdc(BigInt(mission.quotes[0].priceUsdc))} USDC` : bidCount > 1 ? `${bidCount} signed bids received` : 'Waiting for bids',
+    escrow: paid && mission?.chain ? `${usdc(BigInt(mission.chain.providerPrice))} USDC paid to provider` : refunded ? 'Buyer refunded' : split ? 'Split payout' : total !== null ? `${usdc(total)} USDC locked` : 'No USDC locked',
+    verifier: done.verdict && mission?.verdict ? `${mission.verdict.decision.toUpperCase()} verdict` : done.delivery ? 'Evidence submitted' : 'Awaiting evidence',
+  }
 
   return <section className="trade-floor" aria-label="Live agent trade visualization">
     <div className="trade-floor-head">
@@ -62,7 +68,7 @@ export function TradeFloor({ mission, onOpenDetails }: { mission: PMission | nul
     </div>
 
     <div className="trade-floor-scene">
-      <MarketRoom phase={blocked || (actualDone.settlement && !activeReplay) ? null : next ?? null} bids={bidCount} escrowed={done.escrow} evidence={done.delivery} settled={done.settlement} outcome={mission?.onchain?.outcome ?? null} />
+      <MarketRoom phase={blocked || (actualDone.settlement && !activeReplay) ? null : next ?? null} bids={bidCount} escrowed={done.escrow} evidence={done.delivery} settled={done.settlement} outcome={mission?.onchain?.outcome ?? null} speech={speech} />
     </div>
     <div className="trade-room-ledger" aria-label="Selected trade facts">
       <span><strong>BUYER</strong>{mission ? short(mission.operator, 6, 4) : 'No request'}</span>

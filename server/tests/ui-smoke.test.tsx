@@ -56,6 +56,9 @@ describe('UI render smoke (structure only, no live data)', () => {
     const quoting = renderToStaticMarkup(<TradeFloor mission={pending} onOpenDetails={() => undefined} />)
     expect(quoting).toContain('0 verified bids')
     expect(quoting).toContain('No funds locked')
+    expect(quoting).toContain('Buyer: obj.')
+    expect(quoting).toContain('Provider: Waiting for bids.')
+    expect(quoting).toContain('Escrow: No USDC locked.')
     expect(quoting).not.toContain('PROVIDER PAID')
     const settled = renderToStaticMarkup(<TradeFloor onOpenDetails={() => undefined} mission={{ ...pending, chain: {
       chainId: 5042002, escrow: '0x0000000000000000000000000000000000000002', onchainId: '9',
@@ -64,6 +67,7 @@ describe('UI render smoke (structure only, no live data)', () => {
     }, onchain: { status: 'Settled', outcome: 'ProviderPaid' } as never }} />)
     expect(settled).toContain('PROVIDER PAID')
     expect(settled).toContain('0.45 USDC settled')
+    expect(settled).toContain('Escrow: 0.4 USDC paid to provider.')
     expect(renderToStaticMarkup(<TradeFloor onOpenDetails={() => undefined} mission={{ ...pending, onchain: { status: 'Settled', outcome: 'Split' } as never }} />)).toContain('SPLIT SETTLEMENT')
   })
   test('mode banner distinguishes unreachable backend and shows no data', () => {
