@@ -89,3 +89,24 @@ Run `node scripts/mainnet-verify-pilot.mjs` to re-fetch all 13 mission transacti
 The paid second-source integration is currently testnet-only and remains disabled in the mainnet pilot.
 
 Stop new funding with `setPaused(true)` or `revokeExecutor()` from the operator wallet; reclaim only available vault funds. Open escrows continue under their settlement and timeout rules. The contracts have no owner, upgrade or emergency pause key.
+
+## 6. DoraHacks submission handoff
+
+**Project title:** A2A Marketplace — Open Agent Network on Arc
+
+**Short description:** Independent agent wallets register ERC-8004 identities and bid on data requests with EIP-712 signatures. A buyer agent ranks bids using price, capability, delivery time and recorded trust, then spends only within a human-set USDC vault policy. The winning provider commits a signed, content-addressed observation; a verifier checks the evidence and the Arc Mainnet escrow releases payment or refunds the buyer after a challenge window. The pixel office visualizes each state. Two real mainnet missions demonstrate both outcomes using clearly attributed NOAA CO-OPS public water-level data. The signatures attest who relayed a reading; they do not establish physical sensor ownership.
+
+| Form field | Value |
+|---|---|
+| Arc Studio project | https://studio.arc.io/app/85cafd3b-414a-4a69-a0e7-a2dd13e31f16 |
+| Public app | https://a2a-marketplace-arc.vercel.app |
+| Public repository | https://github.com/cuongpo/a2a-marketplace-arc |
+| Builder profile | https://github.com/cuongpo |
+| Mainnet escrow | https://explorer.arc.io/address/0x5556B234331f37d49A44A1086de0229569492212 |
+| Real USDC transfer into escrow | https://explorer.arc.io/tx/0xe41183603f924075cd28b01826bebceab6c782ddcbd056bda00b15d9647e1776 |
+| Real provider withdrawal | https://explorer.arc.io/tx/0x8ba69ed4b847a6eeee7dfcc8f6c568ffd73ecda9edb764cd8e5d84834805d7b5 |
+| Refund example | https://explorer.arc.io/tx/0xf188603cf6d1fd17045477aea3e3032aefcb97f3abbad5c615a85dd4cbf7d13c |
+
+**How Arc Studio was used:** The original four contracts and application were generated and iterated in the Arc Studio project above. Its Arc Testnet deployments and 161 passing Solidity tests are visible from the CLI/project history. After local security hardening and an Arc Studio quick review, the same application contracts were deployed from a locally held signer to Arc Mainnet; Arc Studio does not hold or use the mainnet key. Sourcify has exact bytecode matches for all four mainnet contracts. The public viewer and the 13 successful pilot transaction receipts show the mainnet app behavior. This is a bounded, unaudited pilot.
+
+**Video walkthrough shot list (60–90 seconds):** In a browser signed into Arc Studio, show this project's workspace, contract files, test/review result and app preview (20 seconds). Open the public mainnet viewer, show B3 ProviderPaid and its receipt, then C4 BuyerRefunded and its receipt (30 seconds). Open the Arc Explorer funding and provider-withdrawal transactions, pointing to USDC movement and the escrow address (20 seconds). End on the public GitHub repo and the four verified contract links (10 seconds). Record and upload the video from the builder's logged-in browser; paste its public or unlisted URL into DoraHacks. Do not show any `.env` file, wallet key, Arc Studio token or Vercel credentials.
