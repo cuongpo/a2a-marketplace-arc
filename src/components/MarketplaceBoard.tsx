@@ -24,7 +24,7 @@ const phaseLabel: Record<Exclude<Filter, 'all'>, string> = {
   open: 'AVAILABLE', bidding: 'BIDS OPEN', working: 'IN PROGRESS', paid: 'PAID', refunded: 'CLOSED',
 }
 
-export function MarketplaceBoard({ cells, selected, onSelect }: { cells: TileCell[]; selected: string | null; onSelect: (slot: string) => void }) {
+export function MarketplaceBoard({ cells, selected, onSelect, readOnly = false }: { cells: TileCell[]; selected: string | null; onSelect: (slot: string) => void; readOnly?: boolean }) {
   const [filter, setFilter] = useState<Filter>('all')
   const filtered = cells.filter((c) => filter === 'all' || phase(c) === filter)
   const count = (p: Filter) => cells.filter((c) => p === 'all' || phase(c) === p).length
@@ -32,8 +32,8 @@ export function MarketplaceBoard({ cells, selected, onSelect }: { cells: TileCel
   return (
     <section className="market-shell" aria-label="A2A Marketplace request board">
       <div className="market-board-head">
-        <div><span className="market-section-label">THE EXCHANGE</span><h2>Request board <small>{cells.length || 24} slots</small></h2><p>Current service category: signed water-level data. Select an available slot to open a request.</p></div>
-        <span className="market-chain-pill"><Fingerprint size={14} /> WALLET-SIGNED ACTIONS</span>
+        <div><span className="market-section-label">THE EXCHANGE</span><h2>Request board <small>{cells.length || 24} slots</small></h2><p>{readOnly ? 'Inspect the mainnet pilot requests and their onchain receipts.' : 'Current service category: signed water-level data. Select an available slot to open a request.'}</p></div>
+        <span className="market-chain-pill"><Fingerprint size={14} /> {readOnly ? 'READ-ONLY MAINNET PILOT' : 'WALLET-SIGNED ACTIONS'}</span>
       </div>
       <div className="market-filters" role="group" aria-label="Filter requests">
         {FILTERS.map((f) => <button type="button" key={f.id} className={filter === f.id ? 'market-filter active' : 'market-filter'} aria-pressed={filter === f.id} onClick={() => setFilter(f.id)}>{f.label}<span>{count(f.id)}</span></button>)}
@@ -47,32 +47,32 @@ export function MarketplaceBoard({ cells, selected, onSelect }: { cells: TileCel
             <span className="market-card-art"><DatabaseZap size={25} strokeWidth={1.6} /><span className="market-card-orbit"><Sparkles size={10} /></span></span>
             <span className="market-card-title">Verified data request</span>
             <span className="market-card-sub">Water level · signed reading</span>
-            <span className="market-card-bottom"><span>{p === 'open' ? 'CREATE REQUEST' : p === 'bidding' ? `${c.bidCount ?? 0} BIDS RECEIVED` : p === 'paid' ? `${c.value ?? '—'} mm · ${c.simulated ? 'SIM' : 'SIGNED'}` : c.budgetUsdc ? `${usdc(c.budgetUsdc)} USDC MAX` : 'VIEW TRADE'}</span><ArrowRight size={14} /></span>
+            <span className="market-card-bottom"><span>{p === 'open' ? readOnly ? 'NO REQUEST' : 'CREATE REQUEST' : p === 'bidding' ? `${c.bidCount ?? 0} BIDS RECEIVED` : p === 'paid' ? `${c.value ?? '—'} mm · ${c.simulated ? 'SIM' : 'SIGNED'}` : c.budgetUsdc ? `${usdc(c.budgetUsdc)} USDC MAX` : 'VIEW TRADE'}</span><ArrowRight size={14} /></span>
           </button>
         })}
-      </div> : <div className="market-empty">No requests in this view. Pick another filter or open a new request.</div>}
+      </div> : <div className="market-empty">No requests in this view. Pick another filter.</div>}
 
-      <div className="market-foot"><span><span className="market-live-dot" /> Chain state and payment receipts are live.</span><span>Demo fixtures are labelled SIMULATED. A signed reading proves key control, not physical truth.</span></div>
+      <div className="market-foot"><span><span className="market-live-dot" /> {readOnly ? 'Receipts link to Arc Explorer; viewer has a stored fallback.' : 'Chain state and payment receipts are live.'}</span><span>Each reading shows provenance. A signed reading proves key control, not physical truth.</span></div>
     </section>
   )
 }
 
-export function MarketplaceStage({ cells, mission, chainId, onOpenDetails }: { cells: TileCell[]; mission: PMission | null; chainId: number; onOpenDetails: () => void }) {
+export function MarketplaceStage({ cells, mission, chainId, onOpenDetails, readOnly = false }: { cells: TileCell[]; mission: PMission | null; chainId: number; onOpenDetails: () => void; readOnly?: boolean }) {
   const count = (p: Exclude<Filter, 'all'>) => cells.filter((c) => phase(c) === p).length
   return <section className="market-shell market-stage" aria-label="A2A Marketplace trading floor">
     <div className="market-hero">
       <div className="market-hero-copy">
-        <span className="market-kicker"><span className="market-live-dot" /> LIVE ON ARC / AGENT ECONOMY</span>
+        <span className="market-kicker"><span className="market-live-dot" /> ARC {chainId === 5042 ? 'MAINNET' : 'TESTNET'} / AGENT ECONOMY</span>
         <h1>Agent-to-agent <span>commerce, visible.</span></h1>
-        <p>Post a data request. Provider agents bid, USDC enters escrow, and a verifier decides the payout.</p>
+        <p>{readOnly ? 'Inspect two real agent trades: one paid provider, one refunded buyer. Every settlement links to Arc Mainnet.' : 'Post a data request. Provider agents bid, USDC enters escrow, and a verifier decides the payout.'}</p>
       </div>
       <div className="market-hero-stats" aria-label="Marketplace activity">
         <div><strong>{cells.length || '—'}</strong><span>REQUEST SLOTS</span></div>
-        <div><strong>{cells.length ? count('bidding') + count('working') : '—'}</strong><span>LIVE TRADES</span></div>
+        <div><strong>{cells.length ? count('paid') + count('refunded') : '—'}</strong><span>SETTLED TRADES</span></div>
         <div><strong>{cells.length ? count('paid') : '—'}</strong><span>PAID OUT</span></div>
       </div>
     </div>
     <TradeFloor mission={mission} onOpenDetails={onOpenDetails} />
-    <AgentNetwork mission={mission} chainId={chainId} />
+    <AgentNetwork mission={mission} chainId={chainId} readOnly={readOnly} />
   </section>
 }

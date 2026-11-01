@@ -4,11 +4,18 @@
   "rpcUrl": "https://rpc.mainnet.arc.io",
   "explorer": "https://explorer.arc.io",
   "usdc": "0x3600000000000000000000000000000000000000",
-  "registry": "",
-  "escrow": "",
-  "vault": "",
-  "adapter": "",
+  "registry": "0x12Ca5F0A45Bb1b3aa86A161F73f9330eFf4E7123",
+  "escrow": "0x5556B234331f37d49A44A1086de0229569492212",
+  "vault": "0xA8FdB1BF1b3aA8bF5Fa2fA676138a255D0F36e58",
+  "adapter": "0x300a16910D8A27Af2075255AA1B03e58D69a8720",
   "identityRegistry": "0x8004A169FB4a3325136EB29fA0ceB6D2e539a432",
   "reputationRegistry": "0x8004BAa17C55a88189AE136b182e5fdA19dE9b63",
-  "note": "NOT DEPLOYED. Arc Studio never deploys to mainnet. Fill these after you deploy from your own wallet (docs/MAINNET_RUNBOOK.md)."
+  "note": "Deployed from the local pilot deployer wallet on Arc Mainnet. Unaudited hackathon pilot; use bounded vault policy and review receipts in docs/MAINNET_RUNBOOK.md.",
+  "deployTxs": {
+    "registry": "0x86386964ebec33c1fac9db6106de76a5f26acf8b73d3be07c1a32542d51db2b8",
+    "escrow": "0x493da623d54f3e7e8663e58447442051850045a5b6075a0342cdd8ee0b8d8c8c",
+    "vault": "0x290b9ef736180227422c648d9e0210d7dc68a2de9b9de7e6c492d1c2b2b0a838",
+    "adapter": "0xf19e58d4b22664b676a61196276e58b70234a3c818a8391a93f438645a146824"
+  },
+  "deployedAt": "2026-11-01T15:06:31.431Z"
 }

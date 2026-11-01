@@ -19,6 +19,7 @@ export function ModeBanner({ ov, error }: { ov: Overview | null; error: string |
       }`}
     >
       <span>{main ? 'ARC MAINNET: REAL USDC' : 'ARC TESTNET: TEST USDC, NO REAL VALUE'}</span>
+      {ov.readOnly ? <span className="font-normal opacity-80">{ov.archived ? 'public pilot archive · latest stored snapshot; verify current state on Arc Explorer' : 'public read-only pilot · chain reads and receipts are live'}</span> : null}
       <span className="mono font-normal opacity-80">chain {ov.chainId}</span>
       <span className="font-normal opacity-80">{ov.contracts ? 'contracts deployed' : 'contracts not deployed for this network'}</span>
       {ov.fixtureEnabled ? <span className="font-normal opacity-80">sensor fixtures are SIMULATED</span> : null}

@@ -33,12 +33,12 @@ const wallets = ROLE_KEYS.map(([label, key]) => {
 if (new Set(wallets.map((w) => w.address.toLowerCase())).size !== wallets.length) throw new Error('two roles share one wallet')
 const server = privateEnv('.env.mainnet.server')
 if (server.FQ_NETWORK !== 'mainnet' || server.FQ_ENABLE_FIXTURE !== '0' || server.FQ_BUYER_AGENT_KEY !== env.FQ_BUYER_AGENT_KEY ||
-  server.FQ_VERIFIER_KEY !== env.FQ_VERIFIER_KEY || server.FQ_ALLOW_MAINNET_SERVER_KEYS ||
+  server.FQ_VERIFIER_KEY !== env.FQ_VERIFIER_KEY || !['', 'i-understand'].includes(server.FQ_ALLOW_MAINNET_SERVER_KEYS ?? '') ||
   ['FQ_OPERATOR_KEY', 'FQ_ARBITER_KEY', 'PROVIDER_AGENT_KEY', 'DEVICE_KEY'].some((key) => key in server))
   throw new Error('isolated mainnet server env is mismatched, unlocked or contains a human/provider key')
 for (const [suffix, providerKey, deviceKey] of [['a', 'PROVIDER_AGENT_KEY', 'DEVICE_KEY'], ['b', 'PROVIDER2_AGENT_KEY', 'DEVICE2_KEY']]) {
   const provider = privateEnv(`.env.mainnet.provider-${suffix}`)
-  if (provider.RUNNER_NETWORK !== 'mainnet' || provider.RUNNER_MAINNET_ACK || provider.SIMULATED === '1' ||
+  if (provider.RUNNER_NETWORK !== 'mainnet' || !['', 'audited-and-funded'].includes(provider.RUNNER_MAINNET_ACK ?? '') || provider.SIMULATED === '1' ||
     provider.PROVIDER_AGENT_KEY !== env[providerKey] || provider.DEVICE_KEY !== env[deviceKey] ||
     ['FQ_OPERATOR_KEY', 'FQ_ARBITER_KEY', 'FQ_BUYER_AGENT_KEY', 'FQ_VERIFIER_KEY'].some((key) => key in provider))
     throw new Error(`isolated provider ${suffix} env is mismatched, unlocked or contains a backend/human key`)
@@ -74,6 +74,7 @@ for (const name of deployed) {
   if (!code || code === '0x') throw new Error(`${name} manifest address ${address} has no onchain code`)
 }
 console.log(`Own contracts with code: ${deployed.length}/4. ${deployed.length < 4 ? 'Deployment is pending.' : 'Inspect constructor immutables and verified source before use.'}`)
+console.log(`Pilot switches: server ${server.FQ_ALLOW_MAINNET_SERVER_KEYS ? 'enabled' : 'locked'}; providers must use independent real-data feeds.`)
 const baselineGas = 7_448_098n // Sum of four confirmed Arc Testnet deployment receipts; not a mainnet gas quote.
 console.log(`Historical deployment gas x current price: ~${formatUnits(baselineGas * gasPrice, 18)} USDC; re-estimate immediately before deployment.`)
 console.log('Read-only preflight complete. No signature or transaction was created.')

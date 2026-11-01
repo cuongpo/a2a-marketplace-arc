@@ -1,4 +1,4 @@
-import { account, config, hasRole, NETWORK, roleAddresses, type Role } from './env'
+import { account, config, hasRole, NETWORK, PUBLIC_READ_ONLY, roleAddresses, type Role } from './env'
 import {
   CHAIN_ID,
   deployment,
@@ -81,8 +81,9 @@ export async function overview() {
   )
   let vault: unknown = null
   let escrow: unknown = null
-  if (dep && hasRole('operator')) {
-    const op = account('operator').address
+  const publicOperator = process.env.FQ_PUBLIC_OPERATOR_ADDRESS
+  if (dep && (hasRole('operator') || (PUBLIC_READ_ONLY && publicOperator))) {
+    const op = hasRole('operator') ? account('operator').address : publicOperator as Address
     try {
       const [policy, available, committed, net] = await Promise.all([
         vaultRead('policyOf', [op]),
@@ -101,6 +102,7 @@ export async function overview() {
   }
   return jsonSafe({
     network: NETWORK,
+    readOnly: PUBLIC_READ_ONLY,
     chainId: CHAIN_ID,
     explorer: explorerBase,
     usdc: usdcAddress,
@@ -108,7 +110,7 @@ export async function overview() {
     contracts: dep ? { registry: dep.registry, escrow: dep.escrow, vault: dep.vault, adapter: dep.adapter, deployTxs: dep.deployTxs } : null,
     fork: !!process.env.FQ_RPC_URL_OVERRIDE,
     arbiter: await escrowRead<Address>('arbiter').catch(() => null),
-    buyerAgent: hasRole('buyer') ? account('buyer').address : null,
+    buyerAgent: hasRole('buyer') ? account('buyer').address : PUBLIC_READ_ONLY ? process.env.FQ_PUBLIC_BUYER_ADDRESS ?? null : null,
     fixtureEnabled: config.fixtureEnabled,
     llmConfigured: !!config.llmKey,
     referenceConfigured: !!referenceConfig(),

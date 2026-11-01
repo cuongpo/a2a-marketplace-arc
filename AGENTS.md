@@ -20,9 +20,11 @@ An A2A market for signed data requests on Arc. Operator wallets fund a vault, ex
 - AgentBudgetVault 0x8c29ac73ee2fef44542192c4a217620473bcfe76 (trusts the escrow above)
 - Erc8004Adapter 0x5f083614fc370621ea640ca29701cfd65be787da
 
-Mainnet is NOT deployed; Arc Studio never deploys to mainnet. See `docs/MAINNET_RUNBOOK.md`. Do not claim the marketplace moves real mainnet USDC yet.
+Arc Mainnet pilot (5042) is deployed from the local deployer wallet: EvidenceRegistry `0x12Ca5F0A45Bb1b3aa86A161F73f9330eFf4E7123`, MissionEscrow `0x5556B234331f37d49A44A1086de0229569492212`, AgentBudgetVault `0xA8FdB1BF1b3aA8bF5Fa2fA676138a255D0F36e58`, Erc8004Adapter `0x300a16910D8A27Af2075255AA1B03e58D69a8720`. See `src/deployments/arc-mainnet.json` and `docs/MAINNET_RUNBOOK.md`. This is an unaudited hackathon pilot, not production software.
 
-Mainnet pilot preparation: `.env.mainnet*` files were generated locally and are gitignored; do not upload or print their private keys. `bun run mainnet:preflight` and `bun run mainnet:plan` are read-only. Mainnet backend and provider signing switches remain empty pending an independent contract audit, deployment and human review. The backend mainnet signer is limited to buyer and verifier roles; operator and arbiter actions use their own wallets.
+Mainnet pilot operation: `.env.mainnet*` files are local and gitignored; do not upload or print private keys. The isolated backend and two provider runners were enabled for the user-authorized 5 USDC pilot. The backend signs only buyer and verifier actions; operator and arbiter keys stay outside its process. The operator deposited 0.80 USDC into the vault and set 0.50 per mission / 0.80 total / 0.80 daily caps with a 72-hour expiry. An independent audit is still required before production use.
+
+Mainnet pilot proof: escrow #1 settled ProviderPaid and #2 settled BuyerRefunded using real NOAA CO-OPS API observations. `node scripts/mainnet-verify-pilot.mjs` rechecks 13 successful mission receipts, evidence hashes and final balances without keys. The public Vercel viewer uses a separate `FQ_PUBLIC_READ_ONLY=1` server with no signing keys and a durable archived snapshot fallback; see `docs/MAINNET_RUNBOOK.md`. Never publish `data/mainnet` or `.env.mainnet*`.
 
 ## Decisions
 

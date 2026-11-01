@@ -11,6 +11,8 @@ export interface WalletRow {
 }
 export interface Overview {
   network: 'testnet' | 'mainnet'
+  readOnly?: boolean
+  archived?: boolean
   chainId: number
   explorer: string
   usdc: string

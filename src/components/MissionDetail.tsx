@@ -62,13 +62,13 @@ export function MissionDetail({ m, ov, onChange }: { m: PMission; ov: Overview |
       </section>
 
       <AgentTrack m={m} />
-      <PaidReferencePanel m={m} ov={ov} onChange={onChange} />
+      {ov?.readOnly ? null : <PaidReferencePanel m={m} ov={ov} onChange={onChange} />}
 
       <section className="card space-y-4 p-4 sm:p-5">
         <BidList m={m} />
-        <ProviderBid m={m} ov={ov} onChange={onChange} />
-        <ProviderFulfillment m={m} ov={ov} onChange={onChange} />
-        <ActionPanel m={m} ov={ov} onChange={onChange} />
+        {ov?.readOnly ? null : <ProviderBid m={m} ov={ov} onChange={onChange} />}
+        {ov?.readOnly ? null : <ProviderFulfillment m={m} ov={ov} onChange={onChange} />}
+        {ov?.readOnly ? null : <ActionPanel m={m} ov={ov} onChange={onChange} />}
         <EvidencePanel m={m} />
       </section>
 

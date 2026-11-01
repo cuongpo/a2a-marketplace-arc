@@ -38,7 +38,7 @@ export function VaultSetup({ ov }: { ov: Overview | null }) {
     }
   }
   const wrongChain = isConnected && !!targetChainId && chainId !== targetChainId
-  const caps = ov?.network === 'mainnet' ? ['0.50', '2', '1'] as const : ['1.5', '10', '5'] as const
+  const caps = ov?.network === 'mainnet' ? ['0.50', '0.80', '0.80'] as const : ['1.5', '10', '5'] as const
   const policy = pol.data as { executor: string; paused: boolean } | undefined
   const authorised = policy && buyer && policy.executor.toLowerCase() === buyer.toLowerCase()
 
@@ -99,7 +99,7 @@ export function VaultSetup({ ov }: { ov: Overview | null }) {
                   disabled={isPending}
                   onClick={() =>
                     void act(async () => {
-                      const exp = BigInt(Math.floor(Date.now() / 1000) + 30 * 86400)
+                      const exp = BigInt(Math.floor(Date.now() / 1000) + (ov?.network === 'mainnet' ? 3 : 30) * 86400)
                       await writeContractAsync({ address: vault, abi: agentBudgetVaultAbi, functionName: 'setPolicy', args: [buyer, parseUsdc(caps[0]), parseUsdc(caps[1]), parseUsdc(caps[2]), exp], chainId: targetChainId })
                     })
                   }

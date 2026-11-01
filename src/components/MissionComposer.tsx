@@ -17,7 +17,7 @@ const SCENARIOS: { id: Scenario; title: string; body: string; sim: boolean }[] =
 
 export function MissionComposer({ tile, ov, onCreated, onOpenVault }: { tile: string; ov: Overview | null; onCreated: (m: PMission) => void; onOpenVault: () => void }) {
   const [scenario, setScenario] = useState<Scenario>('custom')
-  const [budget, setBudget] = useState('1.00')
+  const [budget, setBudget] = useState('0.45')
   const [minutes, setMinutes] = useState('30')
   const [quoteWindow, setQuoteWindow] = useState('90')
   const [secondSource, setSecondSource] = useState(false)
@@ -26,6 +26,7 @@ export function MissionComposer({ tile, ov, onCreated, onOpenVault }: { tile: st
   const { address, isConnected } = useAccount()
   const signedPost = useSignedPost()
   const vault = useApi<VaultInfo>(address ? `/vault/${address}` : null, 5000)
+  const mainnet = ov?.network === 'mainnet'
 
   let budgetBad: string | null = null
   let budgetRaw = 0n
@@ -39,7 +40,7 @@ export function MissionComposer({ tile, ov, onCreated, onOpenVault }: { tile: st
   const sim = SCENARIOS.find((s) => s.id === scenario)?.sim ?? false
   const authorised = vault.data?.authorised === true
   const overBudget = vault.data ? budgetRaw > BigInt(vault.data.available) : false
-  const disabled = busy || !isConnected || !ov?.deployed || !!budgetBad || !authorised || overBudget || (sim && !ov.fixtureEnabled) || ((secondSource || scenario === 'dispute') && !ov.referenceConfigured)
+  const disabled = busy || !isConnected || !ov?.deployed || !!budgetBad || !authorised || overBudget || (sim && !ov.fixtureEnabled) || ((secondSource || scenario === 'dispute') && !ov.referenceConfigured) || (mainnet && (scenario !== 'custom' || secondSource))
 
   async function submit() {
     setBusy(true)
@@ -104,7 +105,7 @@ export function MissionComposer({ tile, ov, onCreated, onOpenVault }: { tile: st
 
       <fieldset className="mt-4 space-y-2">
         <legend className="label mb-1">Scenario</legend>
-        {SCENARIOS.map((s) => (
+        {SCENARIOS.filter((s) => !mainnet || s.id === 'custom').map((s) => (
           <label key={s.id} className={`flex cursor-pointer gap-3 rounded-xl border p-3 ${scenario === s.id ? 'border-[var(--accent)] bg-white/5' : 'border-white/10'}`}>
             <input type="radio" name="scenario" className="mt-1 !min-h-0 !w-auto" checked={scenario === s.id} onChange={() => setScenario(s.id)} />
             <span>
@@ -137,10 +138,10 @@ export function MissionComposer({ tile, ov, onCreated, onOpenVault }: { tile: st
       {budgetBad ? <p className="mt-1 text-xs text-[var(--danger)]">{budgetBad}</p> : null}
       {overBudget ? <p className="mt-1 text-xs text-[var(--danger)]">Budget exceeds the USDC available in your vault.</p> : null}
 
-      {scenario !== 'dispute' ? <label className="mt-3 flex items-center gap-2 text-sm">
+      {!mainnet && scenario !== 'dispute' ? <label className="mt-3 flex items-center gap-2 text-sm">
         <input type="checkbox" className="!min-h-0 !w-auto" checked={secondSource} onChange={(e) => setSecondSource(e.target.checked)} />
         Buy an independently signed reference reading via x402 ({usdc(ov?.referencePriceUsdc)} USDC from a separate Gateway balance)
-      </label> : <p className="mt-3 text-xs text-[var(--muted)]">This scenario requires a paid reference source.</p>}
+      </label> : !mainnet ? <p className="mt-3 text-xs text-[var(--muted)]">This scenario requires a paid reference source.</p> : null}
       {(secondSource || scenario === 'dispute') && !ov?.referenceConfigured ? <p className="mt-2 text-xs text-[var(--warn)]">Paid reference service is not configured on the backend yet.</p> : null}
       {(secondSource || scenario === 'dispute') && ov?.referenceConfigured ? <p className="mt-2 text-xs text-[var(--subtle)]">The separate Gateway buyer wallet must hold at least 0.001 USDC before the evidence arrives.</p> : null}
 

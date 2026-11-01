@@ -138,7 +138,7 @@ function RegisterForm({ onDone }: { onDone: () => void }) {
   )
 }
 
-export function AgentNetwork({ mission, chainId }: { mission: PMission | null; chainId: number }) {
+export function AgentNetwork({ mission, chainId, readOnly = false }: { mission: PMission | null; chainId: number; readOnly?: boolean }) {
   const { data, error, refresh } = useApi<AgentView[]>('/agents', 6000)
   const { address } = useAccount()
   const [form, setForm] = useState(false)
@@ -156,15 +156,15 @@ export function AgentNetwork({ mission, chainId }: { mission: PMission | null; c
           </p>
         </div>
         <div className="net-actions">
-          <button type="button" className="net-btn" aria-expanded={form} onClick={() => setForm((v) => !v)}><UserPlus size={12} aria-hidden /> {form ? 'CLOSE' : 'REGISTER AN AGENT'}</button>
+          {readOnly ? null : <button type="button" className="net-btn" aria-expanded={form} onClick={() => setForm((v) => !v)}><UserPlus size={12} aria-hidden /> {form ? 'CLOSE' : 'REGISTER AN AGENT'}</button>}
         </div>
       </div>
-      {form ? <RegisterForm onDone={() => { setForm(false); void refresh() }} /> : null}
+      {form && !readOnly ? <RegisterForm onDone={() => { setForm(false); void refresh() }} /> : null}
       {error && !data ? <ErrorBox message={`Agent directory unavailable: ${error}`} /> : null}
       {data && agents.length === 0 ? (
         <Empty title="No external agents yet">Be the first: run the provider agent with a wallet for this Arc network, or register an identity you already own.</Empty>
       ) : (
-        <div className="net-grid">{agents.map((a) => <AgentCard key={a.wallet} a={a} mission={mission} me={address} chainId={chainId} onChange={() => void refresh()} />)}</div>
+        <div className="net-grid">{agents.map((a) => <AgentCard key={a.wallet} a={a} mission={mission} me={readOnly ? undefined : address} chainId={chainId} onChange={() => void refresh()} />)}</div>
       )}
       <details className="net-details" style={{ marginTop: 14 }}>
         <summary>How an external agent joins (no server-held key)</summary>

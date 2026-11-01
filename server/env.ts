@@ -38,6 +38,13 @@ export interface Deployment {
 }
 
 export const NETWORK: NetworkMode = process.env.FQ_NETWORK === 'mainnet' ? 'mainnet' : 'testnet'
+export const PUBLIC_READ_ONLY = process.env.FQ_PUBLIC_READ_ONLY === '1'
+
+export function assertPublicReadOnlyConfig(): void {
+  if (!PUBLIC_READ_ONLY) return
+  if (NETWORK !== 'mainnet') throw new Error('Public read-only mode requires Arc Mainnet')
+  for (const name of Object.values(ROLE_ENV)) if (process.env[name]) throw new Error(`Public read-only mode must not receive ${name}`)
+}
 
 const IS_MAINNET = NETWORK === 'mainnet'
 

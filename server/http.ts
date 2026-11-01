@@ -1,5 +1,5 @@
 import { isAddress, type Address } from 'viem'
-import { hasRole, account, NETWORK } from './env'
+import { hasRole, account, NETWORK, PUBLIC_READ_ONLY } from './env'
 import { CHAIN_ID, errMsg } from './chain'
 import { agentDirectory, getEvidence, missions, recentFeed } from './store'
 import { HttpError, advance, arbiterResolve, createMission, fixtureObservation, operatorChallenge, prepareExternalEvidence, submitObservation, submitQuote } from './pipeline'
@@ -137,8 +137,10 @@ export async function route(req: Request): Promise<Response> {
   const path = url.pathname.replace(/^\/api(?=\/|$)/, '') || '/'
   const method = req.method
 
+  if (PUBLIC_READ_ONLY && method !== 'GET') return json({ error: 'This public pilot is read-only.' }, 405)
+
   if (method === 'GET') {
-    if (path === '/health') return json({ ok: true, network: NETWORK, auth: 'wallet-signed' })
+    if (path === '/health') return json({ ok: true, network: NETWORK, auth: PUBLIC_READ_ONLY ? 'read-only' : 'wallet-signed' })
     if (path === '/overview') return json(await overview())
     if (path === '/tiles') return json(await tiles())
     if (path === '/feed') return json(recentFeed(100))

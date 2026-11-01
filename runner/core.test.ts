@@ -27,6 +27,7 @@ function world() {
     bundles: new Map<string, unknown>(),
     credits: 0n,
     feedValue: null as number | null,
+    feedObservedAt: undefined as number | undefined,
     waitResult: 'success' as 'success' | 'reverted' | 'unknown',
     duplicateQuote: false,
     now: 1_800_000_000,
@@ -115,7 +116,7 @@ function world() {
     signReading: () => Promise.resolve(('0x' + '12'.repeat(65)) as Hex),
     tileIdOf,
     registrationUri: () => 'data:application/json;base64,e30=',
-    feed: () => Promise.resolve(w.feedValue === null ? null : { valueMm: w.feedValue, kind: 'field-operator-upload' as const, rawPayload: { source: 'operator-supplied feed file', valueMm: w.feedValue } }),
+    feed: () => Promise.resolve(w.feedValue === null ? null : { valueMm: w.feedValue, kind: 'field-operator-upload' as const, observedAtUnix: w.feedObservedAt, rawPayload: { source: 'operator-supplied feed file', valueMm: w.feedValue } }),
     nonce: () => String(++w.nonceN),
   }
   return { w, io }
@@ -214,6 +215,20 @@ describe('bidding', () => {
 })
 
 describe('fulfilment critical path', () => {
+  test('preserves a source timestamp and rejects a reading from before the mission', async () => {
+    const { w, io } = world()
+    w.missions = [lite()]
+    w.onchain.set('9', onchain(STATUS.Assigned))
+    w.feedValue = 412
+    w.feedObservedAt = 1_799_998_999
+    expect((await fulfil(io, cfg)).join()).toMatch(/fresh feed timestamp/)
+    expect(w.posts.some((p) => p.path.endsWith('/observation'))).toBe(false)
+    w.feedObservedAt = 1_799_999_500
+    await fulfil(io, cfg)
+    const obs = w.posts.find((p) => p.path.endsWith('/observation'))!.body as { reading: { observedAt: number } }
+    expect(obs.reading.observedAt).toBe(1_799_999_500)
+  })
+
   test('accept once, pause without a feed, then upload, commit evidence once, and withdraw once', async () => {
     const { w, io } = world()
     w.missions = [lite()]

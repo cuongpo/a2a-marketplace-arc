@@ -65,6 +65,7 @@ export interface FeedValue {
   valueMm: number
   kind: 'field-operator-upload' | 'simulated-fixture'
   rawPayload: Record<string, unknown>
+  observedAtUnix?: number
 }
 
 export interface RunnerIo {
@@ -279,8 +280,13 @@ export async function fulfil(io: RunnerIo, _cfg: RunnerConfig): Promise<string[]
           notes.push(`#${key} (${pm.spec.tile}) waiting for a feed value`)
           continue
         }
+        const observedAt = f.observedAtUnix ?? Math.max(Number(on.createdAt) + 1, io.nowSec() - 3)
+        if (!Number.isSafeInteger(observedAt) || observedAt < Number(on.createdAt) || observedAt > io.nowSec() + 60 || io.nowSec() - observedAt > Number(on.maxReadingAge)) {
+          notes.push(`#${key} (${pm.spec.tile}) waiting for a fresh feed timestamp after mission creation`)
+          continue
+        }
         const reading: SignedReadingInput['reading'] = {
-          missionId: key, tileId: on.tileId, observedAt: Math.max(Number(on.createdAt) + 1, io.nowSec() - 3), value: String(f.valueMm), unit: on.unit,
+          missionId: key, tileId: on.tileId, observedAt, value: String(f.valueMm), unit: on.unit,
           nonce: io.nonce(), payloadHash: hashCanonical(f.rawPayload),
         }
         obs = { reading, signature: await io.signReading(reading), rawPayload: f.rawPayload, kind: f.kind }

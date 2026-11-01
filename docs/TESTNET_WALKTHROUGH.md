@@ -1,6 +1,6 @@
 # Testnet walkthrough (Arc Testnet, chain 5042002)
 
-Everything below ran on the PUBLIC Arc Testnet (not a fork). Every transaction link is a transaction whose receipt was re-fetched and confirmed `success` by `bun run scripts/fq-verify.ts` (raw output: `docs/testnet-verification.txt`, `docs/testnet-verification.json`). Funds are test USDC with no real value. No mainnet transaction was made and none is claimed.
+Everything below ran on the PUBLIC Arc Testnet (not a fork). Every transaction link is a transaction whose receipt was re-fetched and confirmed `success` by `bun run scripts/fq-verify.ts` (raw output: `docs/testnet-verification.txt`, `docs/testnet-verification.json`). Funds here are test USDC with no real value. The separate Arc Mainnet pilot is documented in [`MAINNET_RUNBOOK.md`](MAINNET_RUNBOOK.md).
 
 > Note: missions #1 to #4 were executed before the API was hardened. They used scripts that called the then-unauthenticated write endpoints. **Mission #5 occurred after the hardening and every write for it was EIP-712 wallet-signed.** The live API rejects unsigned writes.
 

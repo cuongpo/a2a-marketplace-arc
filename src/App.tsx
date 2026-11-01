@@ -27,7 +27,9 @@ function MissionControl({ ov }: { ov: Overview | null }) {
   const missions = useApi<PMission[]>('/missions', 3000)
   const [pickedTile, setPickedTile] = useState<string | null>(null)
   const [tab, setTab] = useState<'mission' | 'vault'>('mission')
-  const selected = pickedTile ?? ([...(missions.data ?? [])].sort((a, b) => b.createdAt - a.createdAt)[0]?.spec.tile || null)
+  const newestTile = [...(missions.data ?? [])].sort((a, b) => b.createdAt - a.createdAt)[0]?.spec.tile ?? null
+  const featuredTile = ov?.readOnly ? missions.data?.find((m) => m.onchain?.outcome === 'ProviderPaid')?.spec.tile : null
+  const selected = pickedTile ?? featuredTile ?? newestTile
 
   const cells = tiles.data ?? []
   const cell = cells.find((c) => c.tile === selected)
@@ -36,7 +38,7 @@ function MissionControl({ ov }: { ov: Overview | null }) {
     void tiles.refresh()
     void missions.refresh()
   }, [tiles, missions])
-  const canCompose = !!selected && (!mission || ['settled', 'expired', 'blocked', 'failed'].includes(mission.stage))
+  const canCompose = !ov?.readOnly && !!selected && (!mission || ['settled', 'expired', 'blocked', 'failed'].includes(mission.stage))
   const [composeFor, setComposeFor] = useState<string | null>(null)
   const composing = composeFor !== null && composeFor === selected
   const setComposing = (v: boolean) => setComposeFor(v ? selected : null)
@@ -54,23 +56,23 @@ function MissionControl({ ov }: { ov: Overview | null }) {
 
   return (
     <main className="mx-auto w-full max-w-[1600px] px-3 py-4 sm:px-5">
-      {tiles.error && !tiles.data ? <Empty title="Marketplace unavailable">{tiles.error}</Empty> : <MarketplaceStage cells={cells} mission={mission ?? null} chainId={ov?.chainId ?? 5042002} onOpenDetails={() => panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })} />}
+      {tiles.error && !tiles.data ? <Empty title="Marketplace unavailable">{tiles.error}</Empty> : <MarketplaceStage cells={cells} mission={mission ?? null} chainId={ov?.chainId ?? 5042002} readOnly={ov?.readOnly} onOpenDetails={() => panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })} />}
       <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1.8fr)_minmax(350px,1fr)] lg:items-start">
         <div className="min-w-0 space-y-4">
-          {tiles.error && !tiles.data ? null : <MarketplaceBoard cells={cells} selected={selected} onSelect={pick} />}
+          {tiles.error && !tiles.data ? null : <MarketplaceBoard cells={cells} selected={selected} onSelect={pick} readOnly={ov?.readOnly} />}
           <div className="hidden lg:block"><EventFeed ov={ov} /></div>
         </div>
         <div ref={panelRef} className="min-w-0 scroll-mt-3 space-y-4">
         <div role="tablist" aria-label="Panels" className="flex gap-2">
           {(['mission', 'vault'] as const).map((t) => (
             <button key={t} role="tab" aria-selected={tab === t} type="button" className={`btn ${tab === t ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setTab(t)}>
-              {t === 'mission' ? 'Mission' : 'Budget and wallets'}
+              {t === 'mission' ? 'Mission' : ov?.readOnly ? 'Onchain budget' : 'Budget and wallets'}
             </button>
           ))}
         </div>
         {tab === 'vault' ? (
           <>
-            <VaultSetup ov={ov} />
+            {ov?.readOnly ? null : <VaultSetup ov={ov} />}
             <WalletsPanel ov={ov} />
           </>
         ) : !selected ? (
@@ -88,7 +90,7 @@ function MissionControl({ ov }: { ov: Overview | null }) {
             ) : null}
           </>
         ) : cell ? (
-          <MissionComposer
+            ov?.readOnly ? <Empty title="Public pilot viewer">Select B3 or C4 to inspect the mainnet missions, signed evidence, settlement and receipts.</Empty> : <MissionComposer
             tile={selected}
             ov={ov}
             onOpenVault={() => setTab('vault')}
@@ -123,11 +125,11 @@ export default function App() {
             <span className="block text-[11px] text-[var(--subtle)]">agents hire agents · verified work · USDC on Arc</span>
           </span>
         </button>
-        <ConnectKitButton showBalance={false} />
+        {ov?.readOnly ? <span className="text-xs text-[var(--subtle)]">PUBLIC MAINNET VIEWER</span> : <ConnectKitButton showBalance={false} />}
       </header>
       {receipt ? <ReceiptPage refId={receipt[1]} /> : <MissionControl ov={ov} />}
       <footer className="mx-auto max-w-7xl px-5 pb-2 pt-4 text-[11px] text-[var(--subtle)]">
-        Unaudited research software. {ov?.network === 'mainnet' ? 'Arc Mainnet uses real USDC.' : 'Testnet USDC has no value.'} Demo fixtures are simulated and are not independent measurements.
+        Unaudited research software. {ov?.network === 'mainnet' ? 'Arc Mainnet uses real USDC. Provider readings show their source; signatures prove key control.' : 'Testnet USDC has no value. Demo fixtures are simulated and are not independent measurements.'}
       </footer>
     </div>
   )

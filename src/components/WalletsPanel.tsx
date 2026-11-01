@@ -30,7 +30,7 @@ export function WalletsPanel({ ov }: { ov: Overview | null }) {
         </>
       ) : (
         <Empty title="Vault not set up">
-          No operator budget is visible yet. Run <span className="mono">bun run fq:setup</span> after funding the operator wallet, or use your own wallet below.
+          {ov.network === 'mainnet' ? 'No operator budget is visible yet. Connect the operator wallet and use the vault setup below.' : <>No operator budget is visible yet. Run <span className="mono">bun run fq:setup</span> after funding the operator wallet, or use your own wallet below.</>}
         </Empty>
       )}
       {ov.escrow ? (
@@ -40,7 +40,7 @@ export function WalletsPanel({ ov }: { ov: Overview | null }) {
         </div>
       ) : null}
       <div>
-        <div className="label mb-1">Agent wallets (testnet role keys, held by the backend)</div>
+        <div className="label mb-1">{ov.network === 'mainnet' ? 'Agent wallets (isolated mainnet roles)' : 'Agent wallets (testnet role keys, held by the backend)'}</div>
         <ul className="divide-y divide-white/10">
           {ov.wallets.map((w) => (
             <li key={w.role} className="flex flex-wrap items-center justify-between gap-2 py-2 text-xs">

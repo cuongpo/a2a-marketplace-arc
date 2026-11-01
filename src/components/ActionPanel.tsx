@@ -173,16 +173,16 @@ export function ActionPanel({ m, ov, onChange }: { m: PMission; ov: Overview | n
             The evidence is ambiguous or challenged. The system does not claim to know the physical truth. A human arbiter rules; on arbiter silence the signed verifier verdict stands, or the buyer is
             refunded if there is none.
           </p>
-          {!roles.isArbiter ? <RoleHint who="arbiter" expected={ov?.arbiter} connected={roles.connected} address={roles.address} /> : null}
-          <div className="flex flex-wrap gap-2">
+          {ov?.network === 'mainnet' ? <p className="text-xs text-[var(--muted)]">The separate arbiter wallet resolves mainnet disputes directly on the escrow contract.</p> : !roles.isArbiter ? <RoleHint who="arbiter" expected={ov?.arbiter} connected={roles.connected} address={roles.address} /> : null}
+          {ov?.network !== 'mainnet' ? <div className="flex flex-wrap gap-2">
             <button type="button" className="btn btn-primary" disabled={busy !== null || !roles.isArbiter} onClick={() => void run('arb1', () => signedPost(`/missions/${m.id}/arbiter`, { providerWins: true }))}>
               <Scale size={16} aria-hidden /> Sign: rule for provider
             </button>
             <button type="button" className="btn btn-ghost" disabled={busy !== null || !roles.isArbiter} onClick={() => void run('arb2', () => signedPost(`/missions/${m.id}/arbiter`, { providerWins: false }))}>
               <Scale size={16} aria-hidden /> Sign: rule for buyer
             </button>
-          </div>
-          <p className="text-[11px] text-[var(--subtle)]">Testnet demo: the arbiter wallet is a demo key. In production the arbiter is a separate human-controlled wallet.</p>
+          </div> : null}
+          {ov?.network !== 'mainnet' ? <p className="text-[11px] text-[var(--subtle)]">Testnet demo: the arbiter wallet is a demo key. In production the arbiter is a separate human-controlled wallet.</p> : null}
         </div>
       ) : null}
       {err ? <ErrorBox message={err} /> : null}

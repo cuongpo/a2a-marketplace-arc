@@ -100,10 +100,10 @@ function readingMessage(r: SignedReadingInput['reading']) {
 function feed(tile: string): Promise<FeedValue | null> {
   if (cfg.feedMode === 'file') {
     // Explicit operator-supplied number: labelled field-operator-upload. This runner never claims a physical sensor.
-    const data = existsSync(feedFile as string) ? (JSON.parse(readFileSync(feedFile as string, 'utf8')) as Record<string, { valueMm?: number; note?: string }>) : {}
+    const data = existsSync(feedFile as string) ? (JSON.parse(readFileSync(feedFile as string, 'utf8')) as Record<string, { valueMm?: number; note?: string; observedAtUnix?: number; sourceUrl?: string; stationId?: string; datum?: string; sourceTimeUtc?: string }>) : {}
     const item = data[tile]
-    if (!item || !Number.isInteger(item.valueMm)) return Promise.resolve(null)
-    return Promise.resolve({ valueMm: item.valueMm as number, kind: 'field-operator-upload', rawPayload: { source: 'operator-supplied feed file', tile, valueMm: item.valueMm, note: item.note ?? 'entered by the provider operator; not a verified physical measurement' } })
+    if (!item || !Number.isInteger(item.valueMm) || item.observedAtUnix !== undefined && !Number.isSafeInteger(item.observedAtUnix)) return Promise.resolve(null)
+    return Promise.resolve({ valueMm: item.valueMm as number, kind: 'field-operator-upload', observedAtUnix: item.observedAtUnix, rawPayload: { source: 'operator-supplied feed file', tile, valueMm: item.valueMm, observedAtUnix: item.observedAtUnix ?? null, sourceUrl: item.sourceUrl ?? null, stationId: item.stationId ?? null, datum: item.datum ?? null, sourceTimeUtc: item.sourceTimeUtc ?? null, note: item.note ?? 'entered by the provider operator; not a verified physical measurement' } })
   }
   if (cfg.feedMode === 'simulated') {
     // Testnet-only SIMULATED value, labelled as such all the way into the evidence and receipt.
