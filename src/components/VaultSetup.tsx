@@ -2,13 +2,12 @@ import { useState } from 'react'
 import { ConnectKitButton } from 'connectkit'
 import { useAccount, useReadContract, useSwitchChain, useWaitForTransactionReceipt, useWriteContract } from 'wagmi'
 import { erc20Abi, type Address } from 'viem'
-import { arcTestnet } from 'viem/chains'
 import { agentBudgetVaultAbi } from '@/shared/abis'
 import { parseUsdc } from '@/onchain-money'
 import { usdc, type Overview } from '@/lib/api'
 import { ErrorBox, TxLink } from './ui'
 
-/** Human operator setup from your OWN wallet: deposit once, authorise the buyer agent under caps. Testnet only. */
+/** Human operator setup from their own wallet, on the chain reported by the backend. */
 export function VaultSetup({ ov }: { ov: Overview | null }) {
   const { address, chainId, isConnected } = useAccount()
   const { switchChain, isPending: switching } = useSwitchChain()
@@ -21,15 +20,12 @@ export function VaultSetup({ ov }: { ov: Overview | null }) {
   const escrow = ov?.contracts?.escrow as Address | undefined
   const usdcAddr = ov?.usdc as Address | undefined
   const buyer = (ov?.buyerAgent ?? undefined) as Address | undefined
-  const enabled = !!ov && ov.network === 'testnet' && !!vault && !!usdcAddr && !!address
-  const common = { chainId: arcTestnet.id, query: { enabled, refetchInterval: 4000 } }
+  const targetChainId = ov?.chainId
+  const enabled = !!ov && (targetChainId === 5042 || targetChainId === 5042002) && !!vault && !!usdcAddr && !!address
+  const common = { chainId: targetChainId, query: { enabled, refetchInterval: 4000 } }
   const avail = useReadContract({ address: vault, abi: agentBudgetVaultAbi, functionName: 'availableOf', args: address ? [address] : undefined, ...common })
   const pol = useReadContract({ address: vault, abi: agentBudgetVaultAbi, functionName: 'policyOf', args: address ? [address] : undefined, ...common })
   const bal = useReadContract({ address: usdcAddr, abi: erc20Abi, functionName: 'balanceOf', args: address ? [address] : undefined, ...common })
-
-  if (ov && ov.network !== 'testnet') {
-    return <section className="card p-4 text-sm text-[var(--muted)]">Mainnet is operated from your own wallet outside Arc Studio. See docs/MAINNET_RUNBOOK.md.</section>
-  }
 
   async function act(fn: () => Promise<unknown>) {
     setLocalErr(null)
@@ -41,7 +37,8 @@ export function VaultSetup({ ov }: { ov: Overview | null }) {
       if (!/rejected|denied/i.test(msg)) setLocalErr(msg.split('\n')[0].slice(0, 200))
     }
   }
-  const wrongChain = isConnected && chainId !== arcTestnet.id
+  const wrongChain = isConnected && !!targetChainId && chainId !== targetChainId
+  const caps = ov?.network === 'mainnet' ? ['0.50', '2', '1'] as const : ['1.5', '10', '5'] as const
   const policy = pol.data as { executor: string; paused: boolean } | undefined
   const authorised = policy && buyer && policy.executor.toLowerCase() === buyer.toLowerCase()
 
@@ -56,8 +53,8 @@ export function VaultSetup({ ov }: { ov: Overview | null }) {
       {isConnected && ov && vault && escrow && usdcAddr && buyer ? (
         <>
           {wrongChain ? (
-            <button type="button" className="btn btn-primary" disabled={switching} onClick={() => switchChain({ chainId: arcTestnet.id })}>
-              Switch to Arc Testnet
+            <button type="button" className="btn btn-primary" disabled={switching || !targetChainId} onClick={() => targetChainId && switchChain({ chainId: targetChainId })}>
+              Switch to Arc {ov.network === 'mainnet' ? 'Mainnet' : 'Testnet'}
             </button>
           ) : (
             <>
@@ -80,7 +77,7 @@ export function VaultSetup({ ov }: { ov: Overview | null }) {
                   onClick={() =>
                     void act(async () => {
                       const v = parseUsdc(amount)
-                      await writeContractAsync({ address: usdcAddr, abi: erc20Abi, functionName: 'approve', args: [vault, v], chainId: arcTestnet.id })
+                      await writeContractAsync({ address: usdcAddr, abi: erc20Abi, functionName: 'approve', args: [vault, v], chainId: targetChainId })
                     })
                   }
                 >
@@ -90,7 +87,7 @@ export function VaultSetup({ ov }: { ov: Overview | null }) {
                   type="button"
                   className="btn btn-primary shrink-0"
                   disabled={isPending}
-                  onClick={() => void act(() => writeContractAsync({ address: vault, abi: agentBudgetVaultAbi, functionName: 'deposit', args: [parseUsdc(amount)], chainId: arcTestnet.id }))}
+                  onClick={() => void act(() => writeContractAsync({ address: vault, abi: agentBudgetVaultAbi, functionName: 'deposit', args: [parseUsdc(amount)], chainId: targetChainId }))}
                 >
                   2. Add to vault
                 </button>
@@ -103,23 +100,23 @@ export function VaultSetup({ ov }: { ov: Overview | null }) {
                   onClick={() =>
                     void act(async () => {
                       const exp = BigInt(Math.floor(Date.now() / 1000) + 30 * 86400)
-                      await writeContractAsync({ address: vault, abi: agentBudgetVaultAbi, functionName: 'setPolicy', args: [buyer, parseUsdc('1.5'), parseUsdc('10'), parseUsdc('5'), exp], chainId: arcTestnet.id })
+                      await writeContractAsync({ address: vault, abi: agentBudgetVaultAbi, functionName: 'setPolicy', args: [buyer, parseUsdc(caps[0]), parseUsdc(caps[1]), parseUsdc(caps[2]), exp], chainId: targetChainId })
                     })
                   }
                 >
-                  3. Authorise buyer agent (1.5 / 10 / 5 USDC caps)
+                  3. Authorise buyer agent ({caps.join(' / ')} USDC caps)
                 </button>
-                <button type="button" className="btn btn-ghost" disabled={isPending} onClick={() => void act(() => writeContractAsync({ address: vault, abi: agentBudgetVaultAbi, functionName: 'setEscrowAllowed', args: [escrow, true], chainId: arcTestnet.id }))}>
+                <button type="button" className="btn btn-ghost" disabled={isPending} onClick={() => void act(() => writeContractAsync({ address: vault, abi: agentBudgetVaultAbi, functionName: 'setEscrowAllowed', args: [escrow, true], chainId: targetChainId }))}>
                   4. Allowlist escrow
                 </button>
-                <button type="button" className="btn btn-ghost" disabled={isPending || !policy} onClick={() => void act(() => writeContractAsync({ address: vault, abi: agentBudgetVaultAbi, functionName: 'setPaused', args: [!policy?.paused], chainId: arcTestnet.id }))}>
+                <button type="button" className="btn btn-ghost" disabled={isPending || !policy} onClick={() => void act(() => writeContractAsync({ address: vault, abi: agentBudgetVaultAbi, functionName: 'setPaused', args: [!policy?.paused], chainId: targetChainId }))}>
                   {policy?.paused ? 'Resume agent' : 'Pause agent'}
                 </button>
                 <button
                   type="button"
                   className="btn btn-danger"
                   disabled={isPending || !avail.data || (avail.data) === 0n || !address}
-                  onClick={() => void act(() => writeContractAsync({ address: vault, abi: agentBudgetVaultAbi, functionName: 'withdrawAvailable', args: [avail.data as bigint, address as Address], chainId: arcTestnet.id }))}
+                  onClick={() => void act(() => writeContractAsync({ address: vault, abi: agentBudgetVaultAbi, functionName: 'withdrawAvailable', args: [avail.data as bigint, address as Address], chainId: targetChainId }))}
                 >
                   Reclaim unspent budget
                 </button>
@@ -130,7 +127,7 @@ export function VaultSetup({ ov }: { ov: Overview | null }) {
           {hash ? (
             <p className="text-xs">
               {receipt.isLoading ? 'Waiting for confirmation: ' : receipt.isSuccess ? 'Confirmed: ' : receipt.isError ? 'Failed: ' : ''}
-              <TxLink chainId={arcTestnet.id} hash={hash} />
+              <TxLink chainId={targetChainId ?? 5042002} hash={hash} />
             </p>
           ) : null}
           {localErr || error ? <ErrorBox message={localErr ?? 'Transaction failed. Check the amount and your balance.'} /> : null}

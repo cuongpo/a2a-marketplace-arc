@@ -54,7 +54,7 @@ function MissionControl({ ov }: { ov: Overview | null }) {
 
   return (
     <main className="mx-auto w-full max-w-[1600px] px-3 py-4 sm:px-5">
-      {tiles.error && !tiles.data ? <Empty title="Marketplace unavailable">{tiles.error}</Empty> : <MarketplaceStage cells={cells} mission={mission ?? null} onOpenDetails={() => panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })} />}
+      {tiles.error && !tiles.data ? <Empty title="Marketplace unavailable">{tiles.error}</Empty> : <MarketplaceStage cells={cells} mission={mission ?? null} chainId={ov?.chainId ?? 5042002} onOpenDetails={() => panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })} />}
       <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1.8fr)_minmax(350px,1fr)] lg:items-start">
         <div className="min-w-0 space-y-4">
           {tiles.error && !tiles.data ? null : <MarketplaceBoard cells={cells} selected={selected} onSelect={pick} />}
@@ -127,7 +127,7 @@ export default function App() {
       </header>
       {receipt ? <ReceiptPage refId={receipt[1]} /> : <MissionControl ov={ov} />}
       <footer className="mx-auto max-w-7xl px-5 pb-2 pt-4 text-[11px] text-[var(--subtle)]">
-        Unaudited research software. Testnet USDC has no value. Demo fixtures are simulated and are not independent measurements.
+        Unaudited research software. {ov?.network === 'mainnet' ? 'Arc Mainnet uses real USDC.' : 'Testnet USDC has no value.'} Demo fixtures are simulated and are not independent measurements.
       </footer>
     </div>
   )

@@ -115,6 +115,7 @@ async function mutate(req: Request, path: string): Promise<Response> {
   if ((r = path.match(/^\/missions\/([\w-]+)\/challenge$/))) {
     const m = must(r[1])
     requireMissionOperator(signer, m)
+    if (NETWORK === 'mainnet') throw new HttpError(409, 'challenge from the operator wallet in the vault UI on mainnet')
     await operatorChallenge(m)
     return json(await publicMission(m))
   }

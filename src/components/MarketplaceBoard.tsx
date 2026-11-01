@@ -57,7 +57,7 @@ export function MarketplaceBoard({ cells, selected, onSelect }: { cells: TileCel
   )
 }
 
-export function MarketplaceStage({ cells, mission, onOpenDetails }: { cells: TileCell[]; mission: PMission | null; onOpenDetails: () => void }) {
+export function MarketplaceStage({ cells, mission, chainId, onOpenDetails }: { cells: TileCell[]; mission: PMission | null; chainId: number; onOpenDetails: () => void }) {
   const count = (p: Exclude<Filter, 'all'>) => cells.filter((c) => phase(c) === p).length
   return <section className="market-shell market-stage" aria-label="A2A Marketplace trading floor">
     <div className="market-hero">
@@ -73,6 +73,6 @@ export function MarketplaceStage({ cells, mission, onOpenDetails }: { cells: Til
       </div>
     </div>
     <TradeFloor mission={mission} onOpenDetails={onOpenDetails} />
-    <AgentNetwork mission={mission} />
+    <AgentNetwork mission={mission} chainId={chainId} />
   </section>
 }

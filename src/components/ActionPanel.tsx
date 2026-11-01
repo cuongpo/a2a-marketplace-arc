@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { useAccount, usePublicClient, useSwitchChain, useWriteContract } from 'wagmi'
-import { arcTestnet } from 'viem/chains'
 import { FlaskConical, Gavel, Lock, Scale, Upload } from 'lucide-react'
 import type { Address } from 'viem'
 import { short, type Overview, type PMission } from '@/lib/api'
@@ -38,7 +37,8 @@ export function ActionPanel({ m, ov, onChange }: { m: PMission; ov: Overview | n
   const { chainId } = useAccount()
   const { switchChainAsync } = useSwitchChain()
   const { writeContractAsync } = useWriteContract()
-  const publicClient = usePublicClient({ chainId: arcTestnet.id })
+  const activeChainId = m.chain?.chainId ?? ov?.chainId
+  const publicClient = usePublicClient({ chainId: activeChainId })
   const [busy, setBusy] = useState<string | null>(null)
   const [err, setErr] = useState<string | null>(null)
   const [chHash, setChHash] = useState<string | null>(null)
@@ -63,13 +63,14 @@ export function ActionPanel({ m, ov, onChange }: { m: PMission; ov: Overview | n
   /** The operator challenges from their own wallet: a real vault transaction, not a server call. */
   async function challenge() {
     if (!ov?.contracts || !m.chain) throw new Error('Contracts are not available')
-    if (chainId !== arcTestnet.id) await switchChainAsync({ chainId: arcTestnet.id })
+    if (!activeChainId) throw new Error('The mission chain is unknown')
+    if (chainId !== activeChainId) await switchChainAsync({ chainId: activeChainId })
     const hash = await writeContractAsync({
       address: ov.contracts.vault as Address,
       abi: agentBudgetVaultAbi,
       functionName: 'challengeMission',
       args: [ov.contracts.escrow as Address, BigInt(m.chain.onchainId)],
-      chainId: arcTestnet.id,
+      chainId: activeChainId,
     })
     setChHash(hash)
     const receipt = await publicClient?.waitForTransactionReceipt({ hash })

@@ -20,6 +20,8 @@
     "gen:abis": "bun run scripts/gen-abis.ts",
     "test:backend": "bun test server/tests runner",
     "runner:provider": "bun --no-env-file --env-file=.env.provider run runner/provider-agent.ts",
+    "mainnet:preflight": "node scripts/mainnet-preflight.mjs",
+    "mainnet:plan": "node scripts/mainnet-deploy-plan.mjs",
     "dev:all": "bun run server & vite",
     "build": "vite build"
   },

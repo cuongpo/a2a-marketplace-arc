@@ -22,6 +22,8 @@ An A2A market for signed data requests on Arc. Operator wallets fund a vault, ex
 
 Mainnet is NOT deployed; Arc Studio never deploys to mainnet. See `docs/MAINNET_RUNBOOK.md`. Do not claim the marketplace moves real mainnet USDC yet.
 
+Mainnet pilot preparation: `.env.mainnet*` files were generated locally and are gitignored; do not upload or print their private keys. `bun run mainnet:preflight` and `bun run mainnet:plan` are read-only. Mainnet backend and provider signing switches remain empty pending an independent contract audit, deployment and human review. The backend mainnet signer is limited to buyer and verifier roles; operator and arbiter actions use their own wallets.
+
 ## Decisions
 
 - Money: USDC ERC-20 view only, 6 decimals, integer base units. Never mix with the 18-decimal native view.

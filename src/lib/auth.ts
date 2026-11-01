@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 import { useAccount, useSignTypedData, useSwitchChain } from 'wagmi'
-import { arcTestnet } from 'viem/chains'
+import { arc, arcTestnet } from 'viem/chains'
 import { hashRequestBody } from '@/shared/canonical'
 import { apiAuthDomain, apiAuthTypes, type ApiChallenge } from '@/shared/typed'
 import { api } from '@/lib/api'
@@ -28,8 +28,8 @@ export function useSignedPost() {
       const c = await api<ApiChallenge>('/auth/challenge', { method: 'POST', body: JSON.stringify({ method: 'POST', path, bodyHash }) })
       // Never sign something other than what we asked for.
       if (c.method !== 'POST' || c.path !== path || c.bodyHash !== bodyHash) throw new Error('The server returned a challenge for a different request. Nothing was signed.')
-      if (c.chainId !== arcTestnet.id) throw new Error(`This build signs on Arc Testnet only (server asked for chain ${c.chainId}).`)
-      if (chainId !== c.chainId) await switchChainAsync({ chainId: arcTestnet.id })
+      if (c.chainId !== arcTestnet.id && c.chainId !== arc.id) throw new Error(`Unsupported Arc chain ${c.chainId}; nothing was signed.`)
+      if (chainId !== c.chainId) await switchChainAsync({ chainId: c.chainId })
       const signature = await signTypedDataAsync({
         domain: apiAuthDomain(c.chainId),
         types: apiAuthTypes,

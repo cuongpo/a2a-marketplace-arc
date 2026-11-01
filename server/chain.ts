@@ -10,7 +10,7 @@ import {
   type Hex,
   type TransactionReceipt,
 } from 'viem'
-import { account, assertTestnetOnlyKeys, loadDeployment, NETWORK, rpcUrlFor, type Deployment, type Role } from './env'
+import { account, assertRoleSigningAllowed, loadDeployment, NETWORK, rpcUrlFor, type Deployment, type Role } from './env'
 import { agentBudgetVaultAbi, evidenceRegistryAbi, missionEscrowAbi } from '../src/shared/abis'
 import { getUsdc, requireChain } from '../src/onchain-facts'
 
@@ -40,7 +40,7 @@ export const publicClient = createPublicClient({ chain: arcChain, transport: tra
 
 const wallets = new Map<Role, ReturnType<typeof createWalletClient>>()
 function walletClient(role: Role) {
-  assertTestnetOnlyKeys()
+  assertRoleSigningAllowed(role)
   let w = wallets.get(role)
   if (!w) {
     w = createWalletClient({ account: account(role), chain: arcChain, transport: transport() })
@@ -86,6 +86,7 @@ export async function send(
   opts: { onHash?: (hash: Hex) => void } = {},
 ): Promise<{ hash: Hex; receipt: TransactionReceipt }> {
   return serial(role, async () => {
+    assertRoleSigningAllowed(role)
     const acct = account(role)
     const { request } = await publicClient.simulateContract({ ...req, account: acct })
     const hash = await walletClient(role).writeContract(request)

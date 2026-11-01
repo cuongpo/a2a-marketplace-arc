@@ -53,7 +53,7 @@ Design choice: when the arbiter is silent, the independently signed verifier ver
 - Stuck funds: verifier inaction is escalated after 3 days, arbiter inaction resolves after 7 days, unassigned or unfinished missions expire after the deadline.
 - Time: only coarse comparisons against `block.timestamp`; no reliance on strictly increasing timestamps; no PREVRANDAO.
 - Challenge griefing: a losing party can delay by challenging once; delay is bounded by the 7 day arbiter timeout and there is no bond. A bond is a recommended improvement for production.
-- Backend key custody: on testnet the role keys live in the backend's `.env` and never reach the browser. On mainnet the server refuses to use them. Mainnet roles must be separate wallets you control; the arbiter must be a human-controlled wallet.
+- Backend key custody: on testnet the role keys live in the backend's `.env`. On mainnet the backend can sign only buyer and verifier actions, and only after an explicit unlock following audit and deployment review. Its isolated env contains only those two keys. Operator and arbiter keys stay outside the backend runtime. A compromised backend can spend within an operator's onchain vault caps, so caps, expiry, monitoring and host security matter.
 - Public API: reads are public. Every mutating endpoint requires a wallet-signed request (next section). The API also validates input, caps body size, rate limits challenges and writes, never serves private evidence bodies, and the demo guard limits a mission budget to 5 USDC.
 - Privacy: only hashes and the reading value are public. A2A request slot ids are abstract; do not publish sensitive locations without rights and consent.
 
@@ -106,7 +106,7 @@ Limits of this design:
 * **Directory spam.** Every registration costs a real identity (gas) and a wallet signature; write calls share the global rate limit. Deactivation is signed by the same wallet and cannot touch others.
 * **Runner compromise.** The runner holds only its own wallet and device key. A stolen device key can sign readings for that wallet's missions until revoked; revoke by calling `revokeSigner` from the provider wallet.
 * **Evidence substitution.** The runner refuses to commit an evidence hash unless the bundle hashes to it and carries its own device, wallet and nonce; the verifier independently checks bundle hash, signature, freshness and plausibility.
-* **Limits.** Feedback `failed` entries are not retried automatically. External provider withdrawals are not linked on receipts. A signed reading proves key control, not physical truth; operator-entered feed numbers are labelled `field-operator-upload`.
+* **Limits.** Feedback failures are retried up to four times without blocking escrow; exhausted failures remain visible. External provider withdrawals are not linked on receipts. A signed reading proves key control, not physical truth; operator-entered feed numbers are labelled `field-operator-upload`.
 
 ## Known limitations
 

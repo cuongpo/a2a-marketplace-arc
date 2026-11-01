@@ -1,6 +1,6 @@
 import { readFileSync, existsSync } from 'node:fs'
 import { privateKeyToAccount, type PrivateKeyAccount } from 'viem/accounts'
-import type { Address, Hex } from 'viem'
+import { isAddress, type Address, type Hex } from 'viem'
 import type { NetworkMode } from '../src/shared/types'
 
 /**
@@ -41,11 +41,13 @@ export const NETWORK: NetworkMode = process.env.FQ_NETWORK === 'mainnet' ? 'main
 
 const IS_MAINNET = NETWORK === 'mainnet'
 
-/** Hard guard: the Studio-hosted server refuses to use server-held demo keys against mainnet. */
-export function assertTestnetOnlyKeys(): void {
+/** Mainnet backend may sign only bounded buyer and verifier actions, after an explicit operator unlock. */
+export function assertRoleSigningAllowed(role: Role): void {
+  if (IS_MAINNET && role !== 'buyer' && role !== 'verifier')
+    throw new Error(`Mainnet server must not hold or use the ${role} signing key`)
   if (IS_MAINNET && process.env.FQ_ALLOW_MAINNET_SERVER_KEYS !== 'i-understand') {
     throw new Error(
-      'Refusing to run server-held role keys against mainnet. Mainnet is operated from your own wallets outside Arc Studio (see docs/MAINNET_RUNBOOK.md).',
+      'Mainnet buyer/verifier signing is locked. Finish the independent audit and review vault caps before enabling FQ_ALLOW_MAINNET_SERVER_KEYS.',
     )
   }
 }
@@ -54,7 +56,14 @@ export function loadDeployment(): Deployment | null {
   const file = IS_MAINNET ? 'src/deployments/arc-mainnet.json' : 'src/deployments/arc-testnet.json'
   if (!existsSync(file)) return null
   const d = JSON.parse(readFileSync(file, 'utf8')) as Deployment
-  if (!d.escrow || !d.vault || !d.registry) return null
+  if (!d.escrow || !d.vault || !d.registry || !d.adapter) return null
+  const expectedId = IS_MAINNET ? 5042 : 5042002
+  if (d.chainId !== expectedId || d.network !== NETWORK || d.usdc?.toLowerCase() !== '0x3600000000000000000000000000000000000000')
+    throw new Error(`Deployment file does not match Arc ${NETWORK} chain ${expectedId} and native USDC`)
+  for (const address of [d.registry, d.escrow, d.vault, d.adapter, d.identityRegistry, d.reputationRegistry])
+    if (!address || !isAddress(address)) throw new Error(`Deployment file has an invalid ${NETWORK} contract address`)
+  if (new Set([d.registry, d.escrow, d.vault, d.adapter].map((a) => a.toLowerCase())).size !== 4)
+    throw new Error('Own deployment contracts must have distinct addresses')
   return d
 }
 
@@ -72,6 +81,7 @@ export function account(role: Role): PrivateKeyAccount {
 }
 
 export function hasRole(role: Role): boolean {
+  if (IS_MAINNET && role !== 'buyer' && role !== 'verifier') return false
   const raw = process.env[ROLE_ENV[role]]
   return !!raw && /^0x[0-9a-fA-F]{64}$/.test(raw)
 }
@@ -93,6 +103,7 @@ export const config = {
 /** RPC URL: the sandbox RPC proxy when provisioned for the chain, else the public URL from onchain-facts/deployment. */
 export function rpcUrlFor(chainKey: 'Arc_Testnet' | 'Arc', fallback: string): string {
   // Local fork rehearsal only (see docs/TESTING.md). Transactions on a fork do NOT exist on the public chain.
+  if (IS_MAINNET && process.env.FQ_RPC_URL_OVERRIDE) throw new Error('Mainnet backend cannot use FQ_RPC_URL_OVERRIDE')
   if (process.env.FQ_RPC_URL_OVERRIDE) return process.env.FQ_RPC_URL_OVERRIDE
   const chains = (process.env.RPC_PROXY_CHAINS ?? '').split(',')
   if (process.env.RPC_PROXY_BASE_URL && process.env.RPC_PROXY_TOKEN && chains.includes(chainKey)) {

@@ -59,14 +59,14 @@ const agent = (over: Partial<AgentView> = {}): AgentView => ({
 
 describe('UI render smoke (structure only, no live data)', () => {
   test('agent cards show identity, trust components and counts without inventing payouts', () => {
-    const html = renderToStaticMarkup(withWallet(<AgentCard a={agent()} mission={null} onChange={() => undefined} />))
+    const html = renderToStaticMarkup(withWallet(<AgentCard a={agent()} mission={null} chainId={5042002} onChange={() => undefined} />))
     expect(html).toContain('ERC-8004 #12')
     expect(html).toContain('TRUST 0.50')
     expect(html).toContain('onchain not counted')
     expect(html).toContain('ACTIVE')
     expect(html).not.toMatch(/Paid|Feedback recorded/)
-    expect(renderToStaticMarkup(withWallet(<AgentCard a={agent({ active: false })} mission={null} onChange={() => undefined} />))).toContain('INACTIVE')
-    expect(renderToStaticMarkup(withWallet(<AgentCard a={agent({ identity: { ok: false, reason: 'x', checkedAt: 1 } })} mission={null} onChange={() => undefined} />))).toContain('IDENTITY UNVERIFIED')
+    expect(renderToStaticMarkup(withWallet(<AgentCard a={agent({ active: false })} mission={null} chainId={5042002} onChange={() => undefined} />))).toContain('INACTIVE')
+    expect(renderToStaticMarkup(withWallet(<AgentCard a={agent({ identity: { ok: false, reason: 'x', checkedAt: 1 } })} mission={null} chainId={5042002} onChange={() => undefined} />))).toContain('IDENTITY UNVERIFIED')
   })
   test('agent bubbles repeat recorded facts only', () => {
     expect(bubble(agent(), null).text).toBe('Listening for invitations.')
@@ -88,7 +88,7 @@ describe('UI render smoke (structure only, no live data)', () => {
     expect(bubble(agent(), failed).text).toMatch(/not counted/)
   })
   test('marketplace renders request slots and live states', () => {
-    expect(renderToStaticMarkup(withWallet(<MarketplaceStage cells={[]} mission={null} onOpenDetails={() => undefined} />))).toContain('Agent-to-agent')
+    expect(renderToStaticMarkup(withWallet(<MarketplaceStage cells={[]} mission={null} chainId={5042002} onOpenDetails={() => undefined} />))).toContain('Agent-to-agent')
     const cells: TileCell[] = [
       { tile: 'A1', col: 'A', row: 1, state: 'fog' },
       { tile: 'B2', col: 'B', row: 2, state: 'revealed', value: 444, simulated: true },

@@ -14,7 +14,6 @@ const CAPS = [
   { id: 'signed-device', label: 'Signed device' },
   { id: 'signed-device+photo', label: 'Signed device + photo' },
 ] as const
-const CHAIN = 5042002
 
 /** Everything shown in a bubble is a recorded fact (invite snapshot, signed quote, decision, settlement, confirmed feedback). */
 export function bubble(a: AgentView, m: PMission | null): { text: string; tx?: string } {
@@ -40,7 +39,7 @@ export function bubble(a: AgentView, m: PMission | null): { text: string; tx?: s
   return { text: a.activity.settled ? `${a.activity.paid}/${a.activity.settled} deliveries paid so far.` : 'Listening for invitations.' }
 }
 
-export function AgentCard({ a, mission, me, onChange }: { a: AgentView; mission: PMission | null; me?: string; onChange: () => void }) {
+export function AgentCard({ a, mission, me, chainId, onChange }: { a: AgentView; mission: PMission | null; me?: string; chainId: number; onChange: () => void }) {
   const post = useSignedPost()
   const [busy, setBusy] = useState(false)
   const b = bubble(a, mission)
@@ -70,7 +69,7 @@ export function AgentCard({ a, mission, me, onChange }: { a: AgentView; mission:
           {won ? <span className="net-chip good">WINNER</span> : null}
         </div>
         <div className="net-meta">
-          ERC-8004 #{a.agentId} · <a href={addrUrl(CHAIN, a.wallet)} target="_blank" rel="noreferrer">{short(a.wallet, 6, 4)}</a>
+          ERC-8004 #{a.agentId} · <a href={addrUrl(chainId, a.wallet)} target="_blank" rel="noreferrer">{short(a.wallet, 6, 4)}</a>
           <br />
           {a.capability.replace(/-/g, ' ')} · {usdc(a.minPriceUsdc)}-{usdc(a.maxPriceUsdc)} USDC · ETA up to {Math.round(a.maxEtaSec / 60)}m
         </div>
@@ -82,7 +81,7 @@ export function AgentCard({ a, mission, me, onChange }: { a: AgentView; mission:
         </div>
         <div className="net-bubble" role="status">
           {b.text}
-          {b.tx ? <> <a href={txUrl(CHAIN, b.tx)} target="_blank" rel="noreferrer">tx {short(b.tx, 8, 4)}</a></> : null}
+          {b.tx ? <> <a href={txUrl(chainId, b.tx)} target="_blank" rel="noreferrer">tx {short(b.tx, 8, 4)}</a></> : null}
         </div>
         <div className="net-meta">invited {a.activity.invited} · bid {a.activity.quoted} · won {a.activity.won} · paid {a.activity.paid}</div>
         {mine && a.active ? <button type="button" className="net-btn danger" disabled={busy} onClick={() => void deactivate()}><Power size={12} aria-hidden /> DEACTIVATE (SIGN)</button> : null}
@@ -139,7 +138,7 @@ function RegisterForm({ onDone }: { onDone: () => void }) {
   )
 }
 
-export function AgentNetwork({ mission }: { mission: PMission | null }) {
+export function AgentNetwork({ mission, chainId }: { mission: PMission | null; chainId: number }) {
   const { data, error, refresh } = useApi<AgentView[]>('/agents', 6000)
   const { address } = useAccount()
   const [form, setForm] = useState(false)
@@ -163,15 +162,15 @@ export function AgentNetwork({ mission }: { mission: PMission | null }) {
       {form ? <RegisterForm onDone={() => { setForm(false); void refresh() }} /> : null}
       {error && !data ? <ErrorBox message={`Agent directory unavailable: ${error}`} /> : null}
       {data && agents.length === 0 ? (
-        <Empty title="No external agents yet">Be the first: run the provider agent with your own testnet key, or register an identity you already own.</Empty>
+        <Empty title="No external agents yet">Be the first: run the provider agent with a wallet for this Arc network, or register an identity you already own.</Empty>
       ) : (
-        <div className="net-grid">{agents.map((a) => <AgentCard key={a.wallet} a={a} mission={mission} me={address} onChange={() => void refresh()} />)}</div>
+        <div className="net-grid">{agents.map((a) => <AgentCard key={a.wallet} a={a} mission={mission} me={address} chainId={chainId} onChange={() => void refresh()} />)}</div>
       )}
       <details className="net-details" style={{ marginTop: 14 }}>
         <summary>How an external agent joins (no server-held key)</summary>
-        <code>{`1. cp .env.provider.example .env.provider   # your own testnet wallet + a separate device key
-2. fund the wallet with a little test USDC for gas (see docs/EXTERNAL_PROVIDER.md)
-3. bun run runner:provider
+        <code>{`1. Create an isolated provider env with its own wallet and device key
+2. Fund the provider wallet with USDC on the active Arc network for gas
+3. Run the external provider runner (see docs/EXTERNAL_PROVIDER.md)
    - registers an ERC-8004 identity and binds it to the adapter
    - registers your reading signer with the EvidenceRegistry
    - signs into the directory, polls invites, signs quotes, accepts and delivers onchain, then withdraws`}</code>

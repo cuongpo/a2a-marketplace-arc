@@ -66,6 +66,8 @@ The demo role wallets (providers, verifier, arbiter, demo operator) are held by 
 
 **Deployment status:** deployed on Arc Testnet only. `src/deployments/arc-mainnet.json` has no contract addresses. Mainnet deployment and real USDC movement have not been performed; see `docs/MAINNET_RUNBOOK.md` before any mainnet use.
 
+Mainnet preparation is read-only until the independent audit and deployment review. The local, ignored `.env.mainnet` wallet vault is separated into backend and provider env files; the backend can sign only buyer and verifier actions after an explicit unlock. Run `bun run mainnet:preflight` to check public chain facts and balances, and `bun run mainnet:plan` to inspect constructor arguments and predicted contract addresses. Never upload `.env.mainnet*` to Arc Studio or commit them.
+
 Environment variables (names only, see `.env.example`):
 
 - `FQ_NETWORK` (testnet or mainnet), `FQ_SERVER_PORT`, `FQ_DATA_DIR`, `FQ_ENABLE_FIXTURE`, `FQ_VAULT_DEPOSIT`

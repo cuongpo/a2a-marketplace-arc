@@ -10,12 +10,16 @@ import { erc8004AdapterAbi, evidenceRegistryAbi, missionEscrowAbi } from '../src
 import { hashRequestBody, hashText } from '../src/shared/canonical'
 import { CAPABILITIES, registrationDataUri } from '../src/shared/network'
 import { apiAuthDomain, apiAuthTypes, quoteDomain, quoteTypes, readingTypes, registryDomain, signerBindingTypes, tileIdOf, type ApiChallenge } from '../src/shared/typed'
-import deployment from '../src/deployments/arc-testnet.json'
+import testnetDeployment from '../src/deployments/arc-testnet.json'
+import mainnetDeployment from '../src/deployments/arc-mainnet.json'
 import { emptyState, tick, setup, type FeedValue, type RunnerConfig, type RunnerIo, type RunnerState } from './core'
 import type { SignedReadingInput } from '../src/shared/types'
 
-const CHAIN_ID = 5042002
-if (process.env.RUNNER_NETWORK === 'mainnet') throw new Error('this runner is Arc Testnet only')
+const IS_MAINNET = (process.env.RUNNER_NETWORK ?? process.env.FQ_NETWORK) === 'mainnet'
+const CHAIN_ID = IS_MAINNET ? 5042 : 5042002
+if (IS_MAINNET && process.env.RUNNER_MAINNET_ACK !== 'audited-and-funded')
+  throw new Error('Mainnet provider runner is locked until the contracts are audited, deployed and explicitly enabled with RUNNER_MAINNET_ACK')
+if (IS_MAINNET && process.env.SIMULATED === '1') throw new Error('SIMULATED feed is forbidden on mainnet')
 const env = (k: string, d?: string) => process.env[k] ?? d
 const need = (k: string) => {
   const v = process.env[k]
@@ -32,7 +36,9 @@ const wallet = keyOf('PROVIDER_AGENT_KEY')
 const device = keyOf('DEVICE_KEY')
 if (wallet.address.toLowerCase() === device.address.toLowerCase()) throw new Error('DEVICE_KEY must be different from the wallet key')
 const API = (env('A2A_API', 'http://127.0.0.1:3001') as string).replace(/\/$/, '')
-const dep = deployment as { registry: Address; escrow: Address; adapter: Address; identityRegistry: Address }
+const dep = (IS_MAINNET ? mainnetDeployment : testnetDeployment) as { registry: Address; escrow: Address; adapter: Address; identityRegistry: Address }
+if (!([dep.registry, dep.escrow, dep.adapter, dep.identityRegistry].every((a) => /^0x[0-9a-fA-F]{40}$/.test(a))))
+  throw new Error('the selected Arc deployment is incomplete; no provider transaction will be sent')
 const facts = requireChain(CHAIN_ID)
 const chain = defineChain({ id: CHAIN_ID, name: facts.name, nativeCurrency: { name: 'USDC', symbol: 'USDC', decimals: facts.nativeCurrency.decimals }, rpcUrls: { default: { http: [facts.rpcUrls[0]] } } })
 const transport = () => http(undefined, { retryCount: 6, retryDelay: 700, timeout: 20_000 })
