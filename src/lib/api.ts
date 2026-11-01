@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { formatUsdc } from '@/onchain-money'
 import { buildAddressExplorerUrl, buildTxExplorerUrl } from '@/onchain-facts'
-import type { EvidenceBundle, MissionRecord } from '@/shared/types'
+import type { AgentRecord, EvidenceBundle, FeedbackRecord, MissionRecord, TrustBreakdown } from '@/shared/types'
 
 export interface WalletRow {
   role: string
@@ -150,4 +150,12 @@ export const ago = (ms: number) => {
 export function navigate(path: string) {
   history.pushState({}, '', path)
   window.dispatchEvent(new PopStateEvent('popstate'))
+}
+
+/** Public directory entry plus live identity check, trust components and recorded activity (GET /agents). */
+export type AgentView = AgentRecord & {
+  identity: { ok: boolean; reason?: string; checkedAt: number }
+  trust: TrustBreakdown
+  activity: { invited: number; quoted: number; won: number; settled: number; paid: number }
+  recent: { missionId: string; onchainId?: string; tile: string; stage: string; feedback?: FeedbackRecord }[]
 }

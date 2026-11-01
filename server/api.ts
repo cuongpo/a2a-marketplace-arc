@@ -12,7 +12,7 @@ import {
   usdcBalance,
   vaultRead,
 } from './chain'
-import { getEvidence, missions } from './store'
+import { agentDirectory, getEvidence, missions } from './store'
 import { PROVIDERS } from './agents/provider'
 import { hashCanonical } from '../src/shared/canonical'
 import { OUTCOME_NAMES, STATUS_NAMES, tileIdOf } from '../src/shared/typed'
@@ -230,6 +230,13 @@ async function buildReceipt(ref: string) {
     verdict: local?.verdict ? { decision: local.verdict.decision, reasons: local.verdict.reasons, reasonHash: local.verdict.reasonHash } : null,
     secondSource: local?.secondSource ?? null,
     settlement: settled ? settled.args : null,
+    // Present only when an adapter transaction was actually confirmed (or skipped with a stated reason).
+    feedback: local?.feedback ?? null,
+    providerAgent: (() => {
+      const a = agentDirectory.get(m.provider)
+      return a ? { agentId: a.agentId, displayName: a.displayName } : null
+    })(),
+    invitedProvider: local?.invites ? local.invites.entries.some((e) => e.wallet.toLowerCase() === m.provider.toLowerCase()) : null,
     events: events.map((e) => ({ name: e.eventName, args: e.args, txHash: e.transactionHash, block: e.blockNumber })),
     simulated: evidence?.provenance.simulated ?? null,
   })

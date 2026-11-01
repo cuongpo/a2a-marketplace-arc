@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { ArrowRight, DatabaseZap, Fingerprint, Sparkles } from 'lucide-react'
 import { usdc, type PMission, type TileCell } from '@/lib/api'
 import { TradeFloor } from './TradeFloor'
+import { AgentNetwork } from './AgentNetwork'
 import './marketplace.css'
 
 type Filter = 'all' | 'open' | 'bidding' | 'working' | 'paid' | 'refunded'
@@ -72,5 +73,6 @@ export function MarketplaceStage({ cells, mission, onOpenDetails }: { cells: Til
       </div>
     </div>
     <TradeFloor mission={mission} onOpenDetails={onOpenDetails} />
+    <AgentNetwork mission={mission} />
   </section>
 }

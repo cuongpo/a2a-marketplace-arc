@@ -1,6 +1,7 @@
 .env
 .env.*
 !.env.example
+!.env.provider.example
 node_modules
 data/
 dist
@@ -10,3 +11,5 @@ contracts/out
 .arc-studio/
 traces.jsonl
 console.jsonl
+runner-state-*.json
+feed-*.json

@@ -6,7 +6,11 @@ import { ModeBanner } from '@/components/ModeBanner'
 import { BidList } from '@/components/BidList'
 import { EvidencePanel } from '@/components/EvidencePanel'
 import { AgentTrack, lanesOf, stepOf } from '@/components/AgentTrack'
-import type { PMission, TileCell } from '@/lib/api'
+import { WagmiProvider, createConfig, http } from 'wagmi'
+import { mainnet } from 'wagmi/chains'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { AgentCard, bubble } from '@/components/AgentNetwork'
+import type { AgentView, PMission, TileCell } from '@/lib/api'
 
 const pending: PMission = {
   id: 'abc12345',
@@ -40,9 +44,51 @@ const pending: PMission = {
   evidencePreview: null,
 } as PMission
 
+const wagmiConfig = createConfig({ chains: [mainnet], transports: { [mainnet.id]: http() }, ssr: true })
+const withWallet = (node: React.ReactNode) => (
+  <WagmiProvider config={wagmiConfig}>
+    <QueryClientProvider client={new QueryClient()}>{node}</QueryClientProvider>
+  </WagmiProvider>
+)
+const agent = (over: Partial<AgentView> = {}): AgentView => ({
+  wallet: '0x00000000000000000000000000000000000000A1', agentId: '12', displayName: 'Test Agent', capability: 'field-operator', minPriceUsdc: '100000', maxPriceUsdc: '600000', maxEtaSec: 900,
+  registrationUri: 'data:application/json;base64,e30=', active: true, createdAt: 1, updatedAt: 1, ownerHistory: [], identity: { ok: true, checkedAt: 1 },
+  trust: { local: { ok: 0, total: 0, score: 0.5 }, onchain: { available: false, count: 0 }, weights: { local: 1, onchain: 0 }, blended: 0.5, sampleCount: 0, note: 'cold start' },
+  activity: { invited: 0, quoted: 0, won: 0, settled: 0, paid: 0 }, recent: [], ...over,
+})
+
 describe('UI render smoke (structure only, no live data)', () => {
+  test('agent cards show identity, trust components and counts without inventing payouts', () => {
+    const html = renderToStaticMarkup(withWallet(<AgentCard a={agent()} mission={null} onChange={() => undefined} />))
+    expect(html).toContain('ERC-8004 #12')
+    expect(html).toContain('TRUST 0.50')
+    expect(html).toContain('onchain not counted')
+    expect(html).toContain('ACTIVE')
+    expect(html).not.toMatch(/Paid|Feedback recorded/)
+    expect(renderToStaticMarkup(withWallet(<AgentCard a={agent({ active: false })} mission={null} onChange={() => undefined} />))).toContain('INACTIVE')
+    expect(renderToStaticMarkup(withWallet(<AgentCard a={agent({ identity: { ok: false, reason: 'x', checkedAt: 1 } })} mission={null} onChange={() => undefined} />))).toContain('IDENTITY UNVERIFIED')
+  })
+  test('agent bubbles repeat recorded facts only', () => {
+    expect(bubble(agent(), null).text).toBe('Listening for invitations.')
+    expect(bubble(agent({ active: false }), null).text).toMatch(/Offline/)
+    expect(bubble(agent({ identity: { ok: false, reason: 'owned by another wallet', checkedAt: 1 } }), null).text).toMatch(/owned by another wallet/)
+    const invited = { ...pending, invites: { at: 1, considered: 1, skipped: [], entries: [{ wallet: agent().wallet, agentId: '12', name: 'Test Agent', capability: 'field-operator', score: 0.71, trust: 0.5, reasons: [] }] } } as PMission
+    expect(bubble(agent(), invited).text).toMatch(/Invited to request B2 \(match 0.71\)/)
+    const quoted = { ...invited, quotes: [{ provider: agent().wallet, priceUsdc: '300000' }] } as never as PMission
+    expect(bubble(agent(), quoted).text).toMatch(/Bid 0.3 USDC/)
+    // No fabricated payout or feedback: a winner with no confirmed feedback or settlement just says it was selected.
+    const won = { ...quoted, quotes: [{ provider: agent().wallet, priceUsdc: '300000', quoteId: 'q1' }], decision: { chosenQuoteId: 'q1', scored: [{ quote: { quoteId: 'q1', provider: agent().wallet, priceUsdc: '300000' } }] }, onchain: { status: 'Assigned' } } as never as PMission
+    expect(bubble(agent(), won).text).toMatch(/Selected at 0.3 USDC/)
+    expect(bubble(agent(), won).text).not.toMatch(/Paid|Feedback/)
+    const fb = { ...won, chain: { onchainId: '9', providerPrice: '300000' }, onchain: { status: 'Settled', outcome: 'ProviderPaid' }, feedback: { status: 'recorded', at: 1, txHash: '0x' + 'ab'.repeat(32), entries: [{ role: 'provider', agentId: '12', outcome: 'recorded', value: '100' }] } } as never as PMission
+    const b = bubble(agent(), fb)
+    expect(b.text).toMatch(/Feedback recorded for mission #9: 100/)
+    expect(b.tx).toBeDefined()
+    const failed = { ...fb, feedback: { status: 'failed', at: 1, txHash: '0x' + 'cd'.repeat(32), entries: [{ role: 'provider', agentId: '12', outcome: 'failed' }] } } as never as PMission
+    expect(bubble(agent(), failed).text).toMatch(/not counted/)
+  })
   test('marketplace renders request slots and live states', () => {
-    expect(renderToStaticMarkup(<MarketplaceStage cells={[]} mission={null} onOpenDetails={() => undefined} />)).toContain('Agent-to-agent')
+    expect(renderToStaticMarkup(withWallet(<MarketplaceStage cells={[]} mission={null} onOpenDetails={() => undefined} />))).toContain('Agent-to-agent')
     const cells: TileCell[] = [
       { tile: 'A1', col: 'A', row: 1, state: 'fog' },
       { tile: 'B2', col: 'B', row: 2, state: 'revealed', value: 444, simulated: true },

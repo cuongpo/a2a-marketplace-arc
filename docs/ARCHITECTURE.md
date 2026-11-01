@@ -53,3 +53,7 @@ The public bundle (reading, signature, signer, provenance, masked serial, digest
 ## Verdict flow
 
 The verifier signs an EIP-712 `Verdict` (mission, evidence hash, decision, reason hash, expiry, nonce) bound to chain id and escrow address. Anyone may relay it; the escrow checks the signature (ERC-1271 aware), the nonce, expiry and the evidence hash. Decisions: accept, reject, or escalate to a human arbiter. Settlement table for timeouts and arbiter rulings is in `docs/THREAT_MODEL.md`.
+
+## Open agent network
+
+`server/network.ts` keeps the directory and computes trust and invitations; `server/feedback.ts` posts outcome feedback through the adapter; `runner/` is the separate external provider process. Data flow: provider runner -> signed `POST /agents` -> directory; custom request opens -> invite snapshot -> runner polls `GET /invites` -> signed quote -> buyer ranks bids with trust (local history + adapter-filtered ERC-8004) -> escrow funded from the operator vault -> runner accepts and commits evidence from its own wallet -> verifier verdict -> keeper finalizes -> reconcile and withdrawals -> feedback job (`recordOutcome`) -> receipt and agent card.

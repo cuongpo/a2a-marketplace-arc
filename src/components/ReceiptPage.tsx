@@ -6,7 +6,7 @@ import { navigate, usdc, useApi } from '@/lib/api'
 import { buildShareLink } from '@/lib/share'
 import { hashCanonical } from '@/shared/canonical'
 import { readingTypes, registryDomain } from '@/shared/typed'
-import type { EvidenceBundle, MissionSpec, SecondSourceRecord } from '@/shared/types'
+import type { EvidenceBundle, FeedbackRecord, MissionSpec, SecondSourceRecord } from '@/shared/types'
 import { AddrLink, Badge, Empty, ErrorBox, SimBadge, Stat, TxLink } from './ui'
 
 interface Receipt {
@@ -29,6 +29,9 @@ interface Receipt {
   events: { name: string; args: Record<string, unknown>; txHash: string; block: string }[]
   simulated: boolean | null
   secondSource: SecondSourceRecord | null
+  feedback?: FeedbackRecord | null
+  providerAgent?: { agentId: string; displayName: string } | null
+  invitedProvider?: boolean | null
 }
 interface Proof {
   label: string
@@ -204,6 +207,22 @@ export function ReceiptPage({ refId }: { refId: string }) {
               <Stat label="Difference" value={data.evidence ? `${Math.abs(data.secondSource.valueMm - Number(data.evidence.reading.value))} mm` : '-'} />
             </div>
             <p className="mt-3 break-all text-xs text-[var(--subtle)]">Gateway payment reference: {data.secondSource.paymentReference}. Gateway authorizations may settle in a later onchain batch; this is not necessarily an individual Arc transaction hash.</p>
+          </section> : null}
+
+          {data.providerAgent || data.feedback || data.invitedProvider !== null && data.invitedProvider !== undefined ? <section className="card p-5" aria-label="Agent identity and ERC-8004 feedback">
+            <div className="label mb-2">Agent identity and ERC-8004 feedback</div>
+            <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+              <Stat label="Provider agent" value={data.providerAgent ? `#${data.providerAgent.agentId}` : 'not in directory'} sub={data.providerAgent?.displayName} />
+              <Stat label="Invited" value={data.invitedProvider === null || data.invitedProvider === undefined ? '-' : data.invitedProvider ? 'yes' : 'no (open bid)'} sub="invitations are recommendations" />
+              <Stat label="Feedback" value={data.feedback ? data.feedback.status : 'none recorded'} sub={data.feedback?.reason} />
+              <Stat label="Feedback tx" value={data.feedback?.txHash ? 'confirmed' : '-'} />
+            </div>
+            {data.feedback?.entries.length ? <ul className="mt-3 space-y-1 text-xs text-[var(--muted)]">
+              {data.feedback.entries.map((e) => <li key={e.role}>{e.role} agent #{e.agentId}: {e.outcome === 'recorded' ? `recorded, value ${e.value ?? 'n/a'} / 100` : 'registry rejected the feedback (not counted)'}</li>)}
+            </ul> : null}
+            {(data.feedback?.txHashes ?? (data.feedback?.txHash ? [data.feedback.txHash] : [])).map((hash, i) =>
+              <div className="mt-2" key={hash}><TxLink chainId={data.chainId} hash={hash} label={`ERC-8004 feedback transaction ${i + 1}`} /></div>)}
+            <p className="mt-3 text-xs text-[var(--subtle)]">Feedback is posted by this marketplace&apos;s adapter from the final escrow outcome. Reputation is a social signal, not proof that a reading is true.</p>
           </section> : null}
 
           <section className="card p-5" aria-label="Onchain events">

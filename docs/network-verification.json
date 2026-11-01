@@ -1,0 +1,291 @@
+[
+  {
+    "label": "operator funds external provider X with 0.035 USDC gas",
+    "hash": "0x4f684e1c3b14182f935708e93f7583836b2be066650dced853de63d1641f26cd",
+    "status": "success",
+    "block": "70111057",
+    "usdcTransfers": [
+      "Operator -> External provider X: 0.035 USDC"
+    ],
+    "adapterFeedback": [],
+    "systemLogs": 1
+  },
+  {
+    "label": "operator funds external provider Y with 0.025 USDC gas",
+    "hash": "0x1043dcd0a54e82c2ea1d22bae90b1ca8e8c3fa800c086d10938ec8abb90a6731",
+    "status": "success",
+    "block": "70111074",
+    "usdcTransfers": [
+      "Operator -> External provider Y: 0.025 USDC"
+    ],
+    "adapterFeedback": [],
+    "systemLogs": 1
+  },
+  {
+    "label": "X registers ERC-8004 identity #897726",
+    "hash": "0xb6c28066ea3b2fbdff299eb99f8de84cd31d43650d418b89592f9122aa25633b",
+    "status": "success",
+    "block": "70111099",
+    "usdcTransfers": [],
+    "adapterFeedback": [],
+    "systemLogs": 0
+  },
+  {
+    "label": "X binds identity in the marketplace adapter",
+    "hash": "0x3c70ce2eb13cbdaf766f981ad83262e91004d9771844538d6c676ae6688b1dd0",
+    "status": "success",
+    "block": "70111107",
+    "usdcTransfers": [],
+    "adapterFeedback": [],
+    "systemLogs": 0
+  },
+  {
+    "label": "X registers its device signer in EvidenceRegistry",
+    "hash": "0x3c032609df7984b0bf17d43142c9e616d74c3df5f82c201b8fa72a6d73674d6d",
+    "status": "success",
+    "block": "70111116",
+    "usdcTransfers": [],
+    "adapterFeedback": [],
+    "systemLogs": 0
+  },
+  {
+    "label": "Y registers ERC-8004 identity #897727",
+    "hash": "0x84a9c89962591d6479f6bb66c728aec646e1ce3548b0f2e6307f08fe6018895f",
+    "status": "success",
+    "block": "70111133",
+    "usdcTransfers": [],
+    "adapterFeedback": [],
+    "systemLogs": 0
+  },
+  {
+    "label": "Y binds identity in the marketplace adapter",
+    "hash": "0xcca2b92e35ddde12a3f5c1290c4f028a463a7b4f95be81ba0dc9437996c11813",
+    "status": "success",
+    "block": "70111141",
+    "usdcTransfers": [],
+    "adapterFeedback": [],
+    "systemLogs": 0
+  },
+  {
+    "label": "Y registers its device signer in EvidenceRegistry",
+    "hash": "0xff33936e18b06ee19b477dbe3d640f0dc7a6eb95cb6e8a55e6cd5ccbd03d33da",
+    "status": "success",
+    "block": "70111150",
+    "usdcTransfers": [],
+    "adapterFeedback": [],
+    "systemLogs": 0
+  },
+  {
+    "label": "mission #7: ERC-8004 outcome feedback via marketplace adapter",
+    "hash": "0xa1c0c369bcef4ce866f0b022cf9addabfd903f893cbef33ed7d4bbea1a50d12b",
+    "status": "success",
+    "block": "70111748",
+    "usdcTransfers": [],
+    "adapterFeedback": [
+      {
+        "role": "provider",
+        "agentId": "897726",
+        "outcome": "recorded",
+        "value": "100"
+      },
+      {
+        "role": "verifier",
+        "agentId": "897707",
+        "outcome": "recorded",
+        "value": "100"
+      }
+    ],
+    "systemLogs": 0
+  },
+  {
+    "label": "mission #7: verifier withdraws credited USDC",
+    "hash": "0x0a527c086a99a22305ba0b1a681d04b179b7f42d156b0d468c7488b869de914a",
+    "status": "success",
+    "block": "70111741",
+    "usdcTransfers": [
+      "0xdF6f312e10E6D57eb9b7FAfc599c92e87288d16e -> Verifier agent: 0.05 USDC"
+    ],
+    "adapterFeedback": [],
+    "systemLogs": 1
+  },
+  {
+    "label": "mission #7: vault reconciles settlement and restores refund to operator budget",
+    "hash": "0xc30bd96df54272590111b31d7fc73aaaf75d7e8ed395946a243324ea2298875f",
+    "status": "success",
+    "block": "70111732",
+    "usdcTransfers": [],
+    "adapterFeedback": [],
+    "systemLogs": 0
+  },
+  {
+    "label": "mission #7: keeper finalizes after challenge window and credits payouts",
+    "hash": "0x9065ee26c577cf7a9dcd600ee8687a708170a8c015b3af82cb31dd5ac9db8c81",
+    "status": "success",
+    "block": "70111727",
+    "usdcTransfers": [],
+    "adapterFeedback": [],
+    "systemLogs": 0
+  },
+  {
+    "label": "mission #7: verifier submits signed accept verdict",
+    "hash": "0x1d86ce6a00271c38d89146fab14482a07185444cbe84b17ece5c253f1cf1ccec",
+    "status": "success",
+    "block": "70111654",
+    "usdcTransfers": [],
+    "adapterFeedback": [],
+    "systemLogs": 0
+  },
+  {
+    "label": "mission #7: buyer agent funds mission from vault",
+    "hash": "0xcf5c6acfc4ffbd7a4842235c51ea70315cd13f0f5518af2596f47bfc56c85d1d",
+    "status": "success",
+    "block": "70111619",
+    "usdcTransfers": [
+      "0x8C29aC73ee2FeF44542192c4A217620473BCfe76 -> 0xdF6f312e10E6D57eb9b7FAfc599c92e87288d16e: 0.35 USDC"
+    ],
+    "adapterFeedback": [],
+    "systemLogs": 1
+  },
+  {
+    "label": "mission #7: external provider accepts assignment (runner)",
+    "hash": "0x6b1a245b43ac9c5872844c340c14e392c17ad7d1a0fdfcbbc7db39fd1ff69b5d",
+    "status": "success",
+    "block": "70111637",
+    "usdcTransfers": [],
+    "adapterFeedback": [],
+    "systemLogs": 0
+  },
+  {
+    "label": "mission #7: external provider commits evidence hash (runner)",
+    "hash": "0x03b35e7e6f11783f1f3d5331a0ae91a297f63de6f3b4a9763aecff375d0ddeea",
+    "status": "success",
+    "block": "70111649",
+    "usdcTransfers": [],
+    "adapterFeedback": [],
+    "systemLogs": 0
+  },
+  {
+    "label": "mission #7: external provider withdraws its USDC credit (runner)",
+    "hash": "0x182180c69ed4c47f23cbced955276bd6298910b1c8e97af8254b27021ad14757",
+    "status": "success",
+    "block": "70111729",
+    "usdcTransfers": [
+      "0xdF6f312e10E6D57eb9b7FAfc599c92e87288d16e -> External provider X: 0.3 USDC"
+    ],
+    "adapterFeedback": [],
+    "systemLogs": 1
+  },
+  {
+    "label": "mission #8: ERC-8004 outcome feedback via marketplace adapter",
+    "hash": "0xfda8d06838bbaca6f19e639c8acdc9e3dbaffda08442f875d34c164e9c49b9ba",
+    "status": "success",
+    "block": "70112177",
+    "usdcTransfers": [],
+    "adapterFeedback": [
+      {
+        "role": "provider",
+        "agentId": "897726",
+        "outcome": "recorded",
+        "value": "100"
+      },
+      {
+        "role": "verifier",
+        "agentId": "897707",
+        "outcome": "recorded",
+        "value": "100"
+      }
+    ],
+    "systemLogs": 0
+  },
+  {
+    "label": "mission #8: verifier withdraws credited USDC",
+    "hash": "0xb884adcdba1a57e3b22cba2e05436254ed47bf64cfd5bbb656ffcad4be1ab04a",
+    "status": "success",
+    "block": "70112169",
+    "usdcTransfers": [
+      "0xdF6f312e10E6D57eb9b7FAfc599c92e87288d16e -> Verifier agent: 0.05 USDC"
+    ],
+    "adapterFeedback": [],
+    "systemLogs": 1
+  },
+  {
+    "label": "mission #8: vault reconciles settlement and restores refund to operator budget",
+    "hash": "0x0f37d3948205befe2306e9e0ed668a2e01ff0d422569172344eee18cf6002b1e",
+    "status": "success",
+    "block": "70112160",
+    "usdcTransfers": [],
+    "adapterFeedback": [],
+    "systemLogs": 0
+  },
+  {
+    "label": "mission #8: keeper finalizes after challenge window and credits payouts",
+    "hash": "0x4a0f3b67c1cd4abc9e530dcd85dcf17220269c58d0c394e3bd6cae042914847f",
+    "status": "success",
+    "block": "70112150",
+    "usdcTransfers": [],
+    "adapterFeedback": [],
+    "systemLogs": 0
+  },
+  {
+    "label": "mission #8: verifier submits signed accept verdict",
+    "hash": "0x83f69ffb99df78c100b9602a72a3b7ae39bd4385a65d2db519dfd26af9eea367",
+    "status": "success",
+    "block": "70112087",
+    "usdcTransfers": [],
+    "adapterFeedback": [],
+    "systemLogs": 0
+  },
+  {
+    "label": "mission #8: buyer agent funds mission from vault",
+    "hash": "0x7179dcc1886e5cd8151608d46e23f70ca334aa209d6d5cfaac87c1970b586ac9",
+    "status": "success",
+    "block": "70112047",
+    "usdcTransfers": [
+      "0x8C29aC73ee2FeF44542192c4A217620473BCfe76 -> 0xdF6f312e10E6D57eb9b7FAfc599c92e87288d16e: 0.37 USDC"
+    ],
+    "adapterFeedback": [],
+    "systemLogs": 1
+  },
+  {
+    "label": "mission #8: external provider accepts assignment (runner)",
+    "hash": "0x4d569d6eacf37056448b33578405c10e5bdce1d300d291181fd9b80bd1fde989",
+    "status": "success",
+    "block": "70112065",
+    "usdcTransfers": [],
+    "adapterFeedback": [],
+    "systemLogs": 0
+  },
+  {
+    "label": "mission #8: external provider commits evidence hash (runner)",
+    "hash": "0xb165858746b39c595f1cc13b98765916ffc2f8f29c6d630c76a9b0dda577a518",
+    "status": "success",
+    "block": "70112084",
+    "usdcTransfers": [],
+    "adapterFeedback": [],
+    "systemLogs": 0
+  },
+  {
+    "label": "mission #8: external provider withdraws its USDC credit (runner)",
+    "hash": "0xd822ed8b50b7e69ce298e088972587ca35b44f305a4204a7f7d9f831bcd560e1",
+    "status": "success",
+    "block": "70112154",
+    "usdcTransfers": [
+      "0xdF6f312e10E6D57eb9b7FAfc599c92e87288d16e -> External provider X: 0.32 USDC"
+    ],
+    "adapterFeedback": [],
+    "systemLogs": 1
+  },
+  {
+    "agentId": "897726",
+    "reputation": {
+      "count": 2,
+      "avgValue": 100
+    }
+  },
+  {
+    "agentId": "897727",
+    "reputation": {
+      "count": 0
+    }
+  }
+]

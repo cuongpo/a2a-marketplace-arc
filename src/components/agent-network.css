@@ -1,0 +1,41 @@
+.net-panel{border-top:1px solid #315664;background:#0b1c29;padding:22px 26px 26px}
+.net-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:14px;margin-bottom:14px}
+.net-head h2{margin:5px 0 3px;color:#f0fbf7;font:700 22px 'Space Grotesk',sans-serif;letter-spacing:-.04em}
+.net-head p{margin:0;color:#a3bdc2;font-size:13px;line-height:1.5;max-width:70ch;text-wrap:pretty}
+.net-actions{display:flex;flex-wrap:wrap;gap:8px}
+.net-btn{min-height:36px;padding:0 13px;border:1px solid #4a7a74;background:#10303a;color:#d9fff4;font:700 11px 'JetBrains Mono',monospace;letter-spacing:.06em;cursor:pointer}
+.net-btn:hover:not(:disabled){background:#17454f}
+.net-btn:disabled{opacity:.5;cursor:not-allowed}
+.net-btn.danger{border-color:#8a5a5a;background:#2c1a1f;color:#ffd6d6}
+.net-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,250px),1fr));gap:12px}
+.net-card{position:relative;min-width:0;display:grid;grid-template-columns:52px minmax(0,1fr);gap:10px;padding:12px;border:1px solid #2d5260;background:#0e2431;overflow:hidden}
+.net-card.winner{border-color:#65e2c3;box-shadow:inset 0 0 0 1px #65e2c344}
+.net-card.off{opacity:.62}
+.net-avatar{width:48px;height:96px;margin:-6px 0 0 2px;background-repeat:no-repeat;background-size:1152px 96px;background-position:-864px 0;image-rendering:pixelated;filter:drop-shadow(2px 3px 0 #08141c);animation:net-idle 1.8s steps(6) infinite}
+.net-card.off .net-avatar{animation:none;filter:grayscale(1) drop-shadow(2px 3px 0 #08141c)}
+@keyframes net-idle{from{background-position-x:-864px}to{background-position-x:-1152px}}
+.net-body{min-width:0;display:flex;flex-direction:column;gap:6px}
+.net-name{display:flex;flex-wrap:wrap;align-items:center;gap:6px;color:#f0fbf7;font:700 14px 'Space Grotesk',sans-serif;overflow-wrap:anywhere}
+.net-meta{color:#9db8bd;font:500 11px 'JetBrains Mono',monospace;overflow-wrap:anywhere;line-height:1.5}
+.net-chip{display:inline-block;padding:2px 6px;border:1px solid #4a7a74;color:#bff5e6;font:700 9px 'JetBrains Mono',monospace;letter-spacing:.08em}
+.net-chip.warn{border-color:#9c7d3f;color:#f6d489}
+.net-chip.bad{border-color:#8a5a5a;color:#ffc4c4}
+.net-chip.good{border-color:#65e2c3;color:#65e2c3}
+.net-trust{display:grid;gap:3px}
+.net-trust-bar{height:6px;background:#17323f;border:1px solid #2d5260}
+.net-trust-bar i{display:block;height:100%;background:linear-gradient(90deg,#7dd3c0,#65e2c3)}
+.net-bubble{position:relative;margin-top:2px;padding:6px 8px;border:1px solid #6a8d95;background:#f2f6e8;color:#14262e;font:600 11px/1.45 'JetBrains Mono',monospace;overflow-wrap:anywhere}
+.net-bubble::before{content:'';position:absolute;left:-6px;top:10px;width:9px;height:9px;background:#f2f6e8;border-left:1px solid #6a8d95;border-bottom:1px solid #6a8d95;transform:rotate(45deg)}
+.net-bubble a{color:#0b6b55}
+.net-details{font-size:11px;color:#9db8bd}
+.net-details summary{cursor:pointer;color:#bff5e6}
+.net-details code{display:block;white-space:pre-wrap;overflow-wrap:anywhere;margin-top:4px;padding:6px;background:#08141c;color:#cde8e0;font:500 10.5px/1.5 'JetBrains Mono',monospace}
+.net-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr));gap:10px;margin:0 0 14px;padding:14px;border:1px solid #3e6f78;background:#0a1e2a}
+.net-form label{display:grid;gap:4px;color:#9db8bd;font:600 10px 'JetBrains Mono',monospace;letter-spacing:.06em;min-width:0}
+.net-form input,.net-form select{min-width:0;min-height:36px;padding:0 8px;border:1px solid #3e6f78;background:#0e2431;color:#eaf8f3;font:500 13px 'JetBrains Mono',monospace}
+.net-form .wide{grid-column:1/-1}
+.net-empty{padding:18px;border:1px dashed #3e6f78;color:#a3bdc2;font-size:13px;line-height:1.55}
+.net-note{margin:12px 0 0;color:#8aa5ab;font-size:11px;line-height:1.5}
+@media (max-width:640px){.net-panel{padding:18px 14px 22px}.net-card{grid-template-columns:44px minmax(0,1fr)}.net-avatar{width:40px;height:80px;background-size:960px 80px;background-position-x:-720px;animation-name:net-idle-s}}
+@keyframes net-idle-s{from{background-position-x:-720px}to{background-position-x:-960px}}
+@media (prefers-reduced-motion:reduce){.net-avatar{animation:none}}

@@ -3,36 +3,27 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { recoverTypedDataAddress } from 'viem'
-import { generatePrivateKey } from 'viem/accounts'
 
 // Isolated data dir BEFORE importing modules that read config at load time.
 const dir = mkdtempSync(join(tmpdir(), 'fq-test-'))
 process.env.FQ_DATA_DIR = dir
 process.env.FQ_ENABLE_FIXTURE = '1'
-process.env.FQ_NETWORK = 'testnet'
-// Tests must not depend on the Arc Studio sandbox's private .env.
-for (const name of [
-  'FQ_OPERATOR_KEY',
-  'FQ_BUYER_AGENT_KEY',
-  'FQ_PROVIDER_KEY',
-  'FQ_SENSOR_KEY',
-  'FQ_PROVIDER2_KEY',
-  'FQ_SENSOR2_KEY',
-  'FQ_VERIFIER_KEY',
-  'FQ_ARBITER_KEY',
-]) process.env[name] = generatePrivateKey()
 
 const { canonicalize, hashCanonical } = await import('../../src/shared/canonical')
 const { account } = await import('../env')
 const { runJob, missions, getEvidence, getPrivate, nonces, nonceKey } = await import('../store')
 const { createMission, submitObservation, HttpError } = await import('../pipeline')
 const { decide } = await import('../agents/buyer')
+const { netDeps, resetNetworkCaches } = await import('../network')
+// No chain reads in unit tests: every wallet is an unbound agent, so trust falls back to local escrow history.
+netDeps.current = { ownerOf: () => Promise.reject(new Error('no identity')), adapterIdentity: () => Promise.resolve({ agentId: 0n, bound: false }), reputation: () => Promise.resolve({ count: 0, avgValue: undefined }), nowSec: () => Math.floor(Date.now() / 1000) }
+resetNetworkCaches()
 const { makeFixtureObservation, referenceGaugeMm } = await import('../fixture')
 const { buildEvidence, recoverReadingSigner } = await import('../evidence')
 const { registryDomain, readingTypes, tileIdOf } = await import('../../src/shared/typed')
 const { CHAIN_ID, requireDeployment } = await import('../chain')
 
-// Bun runs test files in one process; another file may still use the shared store.
+// Test files share one module instance (and so one store) in a single bun process: clean up once, at exit.
 process.on('exit', () => rmSync(dir, { recursive: true, force: true }))
 
 let counter = 0
@@ -165,6 +156,10 @@ describe('observation upload validation', () => {
     await expect(submitObservation(m, { ...good, signature: '0x12' })).rejects.toThrow(HttpError)
     await expect(submitObservation(m, { ...good, rawPayload: { x: 'y'.repeat(9000) } })).rejects.toThrow(HttpError)
     await submitObservation(m, good)
+    // Where the testnet fixture is enabled an external runner may label its evidence SIMULATED (honest direction).
+    expect(m.observation?.kind).toBe('simulated-fixture')
+    // Anything unknown is downgraded to the generic upload label; no upload can claim to be a device adapter by accident.
+    await submitObservation(m, { ...good, kind: 'something-else' })
     expect(m.observation?.kind).toBe('field-operator-upload')
   })
 })

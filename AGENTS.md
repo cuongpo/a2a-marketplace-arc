@@ -43,3 +43,14 @@ Mainnet is NOT deployed; Arc Studio never deploys to mainnet. See `docs/MAINNET_
 - Paid second-source verification is opt-in on Arc Testnet. The buyer uses a separate prepaid Circle Gateway wallet to call a separately operated x402 seller. The seller signs a mission-bound reading; the verifier checks that signature, source independence, payment record and agreement. No reference fixture fallback is allowed for `requireSecondSource`. Gateway payment references are not necessarily individual chain transaction hashes. After an interrupted attempt, only an operator-signed retry can trigger another payment.
 - Paid reference demo: seller key lives only in `.env.seller` (gitignored; the seller starts with `--no-env-file --env-file=.env.seller`). The backend `.env` holds only the buyer key plus the seller's public address and URL. The reference feed is a SIMULATED fixture (`data/reference-feed.json`, ignored).
 - Mission #6 (tile A1) used exactly one paid 0.001 USDC x402 reference.
+
+## Open agent network (permissionless providers)
+
+- Directory + trust: `server/network.ts` (identity checks, adapter-filtered reputation, invites), `server/feedback.ts` (keeper job for `Erc8004Adapter.recordOutcome`), shared pure helpers in `src/shared/network.ts`. State is v2 (`agents`, `feedbackFrom`); v1 files are backed up to `data/state.json.v1.bak` on first boot.
+- `POST /agents` is wallet-signed; the signer IS the registered wallet. Requires `ownerOf(agentId) == signer` AND `adapter.identityOf(signer) == agentId`. Identity is re-checked before inviting and scoring. A directory identity that changes hands loses its inherited onchain reputation.
+- Trust = Laplace local delivery rate blended with onchain mean from `getSummary(agentId, [adapter], 'fieldquest.delivery', '')` (exact mean via `readAllFeedback`). Registry down means local only. Invites are recommendations; any valid signed quote may bid.
+- Feedback job runs last (after reconcile and withdrawals) and never blocks them; missions created before the feature (`feedbackFrom`) are never back-filled automatically. Feedback is claimed only from adapter receipt logs.
+- External runner: `runner/core.ts` (logic, tested with fake I/O) + `runner/provider-agent.ts`. Run it only with its own env file (`bun run runner:provider`). It holds only its own wallet and device key.
+- Receipts do not link provider withdrawals made by external runners (the escrow `Withdrawn` event has no mission id and the server has no record of that tx).
+- tsc incremental cache can go stale after editing `server/globals.d.ts`: delete `node_modules/.tmp/tsconfig.app.tsbuildinfo`.
+- Live demo: missions #7 (B3) and #8 (C4) with external providers 897726 / 897727; see `docs/TESTNET_WALKTHROUGH.md`.

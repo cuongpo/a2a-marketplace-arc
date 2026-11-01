@@ -7,7 +7,7 @@
     "dev": "vite",
     "deploy:self": "bun run ./scripts/self-deploy.ts",
     "fetch:abi": "bun run ./scripts/fetch-abi.ts",
-    "lint": "oxlint --type-aware src scripts server --fix; s=$?; oxlint --fix .; exit $((s>0?s:$?))",
+    "lint": "oxlint --type-aware src scripts server runner --fix; s=$?; oxlint --fix .; exit $((s>0?s:$?))",
     "typecheck": "tsc --noEmit",
     "check": "bash scripts/check.sh",
     "contracts:build": "forge build",
@@ -18,7 +18,8 @@
     "fq:setup": "bun run scripts/fq-setup.ts",
     "fq:journey": "bun run scripts/fq-journey.ts",
     "gen:abis": "bun run scripts/gen-abis.ts",
-    "test:backend": "bun test server/tests",
+    "test:backend": "bun test server/tests runner",
+    "runner:provider": "bun --no-env-file --env-file=.env.provider run runner/provider-agent.ts",
     "dev:all": "bun run server & vite",
     "build": "vite build"
   },

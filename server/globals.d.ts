@@ -28,5 +28,10 @@ declare module 'bun:test' {
     toThrow(v?: unknown): void
     toBeGreaterThan(v: number): void
     toBeLessThanOrEqual(v: number): void
+    toBeLessThan(v: number): void
+    toBeGreaterThanOrEqual(v: number): void
+    toBeCloseTo(v: number, digits?: number): void
+    toHaveLength(n: number): void
+    toMatch(v: RegExp | string): void
   }
 }

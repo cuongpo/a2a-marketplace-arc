@@ -41,3 +41,7 @@ FQ_RPC_URL_OVERRIDE=http://127.0.0.1:8546 FQ_API=http://127.0.0.1:3002 bun run f
 ```
 
 Last fork rehearsal results (labelled fork, not public testnet): accept journey ended Settled / ProviderPaid with provider and verifier withdrawals; reject journey ended BuyerRefunded with the vault budget restored; dispute journey escalated and the arbiter ruled for the buyer. Vault accounting afterwards: available 2.45, committed 0, net spent 0.55 USDC, escrow liabilities 0.
+
+## Open agent network tests
+
+`server/tests/network.test.ts`: registration authorization (unsigned, spoofed identity, wrong binding, duplicate/moved identity, immutable id, self-only deactivation, profile and URL validation), invitation matching and persistence, uninvited bids, trust (cold start, adapter-filtered query arguments, spoof/transfer exclusion, registry-down fallback, blend), buyer ranking with trust components, and the feedback job (log-driven claims, idempotent re-runs, registry failure, partial success, independence from reconcile and withdrawals, no automatic back-fill). `runner/core.test.ts`: the external runner critical path with fake chain and API (onboarding, correctly signed quote, one accept, pause without a feed, evidence verification, one submit, one withdraw, restart safety with pending hashes). `server/tests/ui-smoke.test.tsx` renders the agent cards and checks that bubbles only repeat recorded facts.

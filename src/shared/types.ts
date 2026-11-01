@@ -38,8 +38,67 @@ export interface SignedQuote {
 export interface ScoredQuote {
   quote: SignedQuote
   score: number
-  parts: { price: number; capability: number; reliability: number; deadline: number }
+  /** `reliability` is the blended trust score; `trust` exposes every component behind it. */
+  parts: { price: number; capability: number; reliability: number; deadline: number; trust?: TrustBreakdown }
   excluded?: string
+  /** Informational only: invitations are recommendations, never an allowlist, and do not change the score. */
+  invited?: boolean
+}
+
+/** Registry-published directory entry for an external provider wallet. Public metadata only: no keys, no secrets. */
+export interface AgentRecord {
+  wallet: Address
+  agentId: string // ERC-8004 identity token id (decimal string)
+  displayName: string
+  capability: SignedQuote['evidenceCapability']
+  minPriceUsdc: string // base units: the least this agent would quote
+  maxPriceUsdc: string // base units: the most this agent would quote
+  maxEtaSec: number // the slowest delivery this agent will promise
+  cardUrl?: string // optional public https profile URL. Never fetched by the backend.
+  registrationUri: string // standards-shaped ERC-8004 registration metadata (data URI) or the card URL
+  active: boolean
+  createdAt: number
+  updatedAt: number
+  /** Wallets that have held this identity in this directory. More than one means the identity NFT changed hands
+   *  and its inherited onchain reputation is NOT counted (reputation follows the token, not the operator). */
+  ownerHistory: Address[]
+  identity?: { ok: boolean; reason?: string; checkedAt: number }
+  supersededBy?: Address
+}
+
+/** Every component of an agent's trust score, so ranking is inspectable. Reputation is a social signal, not proof of truth. */
+export interface TrustBreakdown {
+  local: { ok: number; total: number; score: number }
+  onchain: { available: boolean; count: number; avgValue?: number; score?: number; reason?: string; agentId?: string }
+  weights: { local: number; onchain: number }
+  blended: number
+  sampleCount: number
+  note: string
+}
+
+export interface Invite {
+  wallet: Address
+  agentId: string
+  name: string
+  capability: SignedQuote['evidenceCapability']
+  score: number
+  trust: number
+  reasons: string[]
+}
+export interface MissionInvites {
+  at: number
+  entries: Invite[]
+  considered: number
+  skipped: { wallet: Address; reason: string }[]
+  note?: string
+}
+export interface FeedbackRecord {
+  status: 'recorded' | 'partial' | 'failed' | 'skipped'
+  at: number
+  txHash?: Hex
+  txHashes?: Hex[] // all confirmed attempts when one role needed a retry
+  reason?: string
+  entries: { role: 'provider' | 'verifier'; agentId: string; outcome: 'recorded' | 'failed'; value?: string }[]
 }
 
 export type ObservationKind = 'simulated-fixture' | 'field-operator-upload' | 'device-adapter'
@@ -155,6 +214,12 @@ export interface MissionRecord {
   stage: StageId
   stageNote?: string
   quotes: SignedQuote[]
+  /** Snapshot of agents invited when the request opened. Recommendations only; any signed quote may still bid. */
+  invites?: MissionInvites
+  /** ERC-8004 outcome feedback. Present only when an adapter transaction was actually confirmed (or skipped with a reason). */
+  feedback?: FeedbackRecord
+  /** Final escrow outcome read onchain (1 = provider paid, 2 = buyer refunded). */
+  chainOutcome?: number
   decision?: {
     chosenQuoteId: string
     scored: ScoredQuote[]

@@ -37,7 +37,7 @@ type Stored = ApiChallenge & { used: boolean }
 const challenges = new Map<string, Stored>()
 
 /** Only these POST routes can be authorised. Everything else is not signable. */
-const SIGNABLE = [/^\/missions$/, /^\/missions\/[\w-]+\/(?:quotes|observation|fixture|challenge|arbiter)$/]
+const SIGNABLE = [/^\/missions$/, /^\/agents$/, /^\/missions\/[\w-]+\/(?:quotes|observation|fixture|challenge|arbiter)$/]
 
 export function normalizePath(p: string): string {
   const noQuery = p.split('?')[0]

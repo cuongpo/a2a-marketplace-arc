@@ -1,10 +1,12 @@
 import { isAddress, type Address } from 'viem'
 import { hasRole, account, NETWORK } from './env'
 import { CHAIN_ID, errMsg } from './chain'
-import { getEvidence, missions, recentFeed } from './store'
+import { agentDirectory, getEvidence, missions, recentFeed } from './store'
 import { HttpError, advance, arbiterResolve, createMission, fixtureObservation, operatorChallenge, prepareExternalEvidence, submitObservation, submitQuote } from './pipeline'
 import { jsonSafe, overview, publicMission, receipt, tiles, vaultFor } from './api'
 import { AuthError, authenticate, issueChallenge } from './auth'
+import { agentView, invitesFor, registerAgent } from './network'
+
 import { liveDeps, requireArbiter, requireAuthorisedOperator, requireBoundProvider, requireMissionOperator, same, type AuthzDeps } from './authz'
 import type { MissionRecord, SignedReadingInput } from '../src/shared/types'
 
@@ -72,6 +74,12 @@ async function mutate(req: Request, path: string): Promise<Response> {
     return json(await publicMission(m), 201)
   }
 
+  if (path === '/agents') {
+    // The signer IS the wallet being registered or updated; the body cannot name another one.
+    const rec = await registerAgent(signer, body)
+    return json(await agentView(rec), 201)
+  }
+
   let r: RegExpMatchArray | null
   if ((r = path.match(/^\/missions\/([\w-]+)\/quotes$/))) {
     const m = must(r[1])
@@ -133,9 +141,19 @@ export async function route(req: Request): Promise<Response> {
     if (path === '/overview') return json(await overview())
     if (path === '/tiles') return json(await tiles())
     if (path === '/feed') return json(recentFeed(100))
+    if (path === '/agents') return json(await Promise.all(agentDirectory.all().slice(0, 60).map(agentView)))
+    if (path === '/invites') {
+      const w = url.searchParams.get('wallet') ?? ''
+      if (!isAddress(w)) throw new HttpError(400, 'wallet must be an address')
+      return json(invitesFor(w, url.searchParams.get('open') === '1'))
+    }
     if (path === '/missions') return json(await Promise.all(missions.all().slice(0, 40).map(publicMission)))
     let r: RegExpMatchArray | null
     if ((r = path.match(/^\/missions\/([\w-]+)$/))) return json(await publicMission(must(r[1])))
+    if ((r = path.match(/^\/agents\/(0x[0-9a-fA-F]{40})$/))) {
+      const a = agentDirectory.get(r[1])
+      return a ? json(await agentView(a)) : json({ error: 'agent not found' }, 404)
+    }
     if ((r = path.match(/^\/vault\/(0x[0-9a-fA-F]{40})$/))) return json(await vaultFor(r[1] as Address, deps.authz))
     if ((r = path.match(/^\/receipt\/([\w-]+)$/))) {
       const rc = await receipt(r[1])

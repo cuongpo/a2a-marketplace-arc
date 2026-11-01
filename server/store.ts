@@ -1,9 +1,9 @@
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { Hex } from 'viem'
 import { config } from './env'
 import { canonicalize, hashCanonical } from '../src/shared/canonical'
-import type { AuditEntry, EvidenceBundle, JobRecord, MissionRecord } from '../src/shared/types'
+import type { AgentRecord, AuditEntry, EvidenceBundle, JobRecord, MissionRecord } from '../src/shared/types'
 
 /**
  * Persisted state. Atomic JSON writes (tmp + rename) so a crash never leaves a half-written file.
@@ -12,10 +12,14 @@ import type { AuditEntry, EvidenceBundle, JobRecord, MissionRecord } from '../sr
  */
 
 interface State {
-  version: 1
+  version: 2
   missions: Record<string, MissionRecord>
   /** signer:nonce -> local mission id. Verifier-side replay memory across missions. */
   seenNonces: Record<string, string>
+  /** Open agent network directory, keyed by lowercase wallet. Public metadata only. */
+  agents: Record<string, AgentRecord>
+  /** Missions created before this time do not get automatic ERC-8004 feedback jobs (no surprise backfill of old missions). */
+  feedbackFrom: number
 }
 
 const dir = config.dataDir
@@ -24,10 +28,20 @@ const evidenceDir = join(dir, 'evidence')
 const privateDir = join(dir, 'evidence-private')
 for (const p of [dir, evidenceDir, privateDir]) if (!existsSync(p)) mkdirSync(p, { recursive: true })
 
-let state: State = { version: 1, missions: {}, seenNonces: {} }
+let state: State = { version: 2, missions: {}, seenNonces: {}, agents: {}, feedbackFrom: Date.now() }
 if (existsSync(statePath)) {
   try {
-    state = JSON.parse(readFileSync(statePath, 'utf8')) as State
+    const parsed = JSON.parse(readFileSync(statePath, 'utf8')) as Partial<State> & { version?: number }
+    // Safe migration: v1 files (no directory, no feedback epoch) are kept as a backup, then upgraded in place.
+    if (parsed.version !== 2) copyFileSync(statePath, statePath + '.v1.bak')
+    state = {
+      version: 2,
+      missions: parsed.missions ?? {},
+      seenNonces: parsed.seenNonces ?? {},
+      agents: parsed.agents ?? {},
+      feedbackFrom: typeof parsed.feedbackFrom === 'number' ? parsed.feedbackFrom : Date.now(),
+    }
+    if (parsed.version !== 2) writeFileSync(statePath, JSON.stringify(state))
   } catch {
     // keep a copy of the unreadable file instead of silently discarding it
     renameSync(statePath, statePath + '.corrupt-' + Date.now())
@@ -51,6 +65,18 @@ export const missions = {
   },
   save,
 }
+
+export const agentDirectory = {
+  all: (): AgentRecord[] => Object.values(state.agents).sort((a, b) => a.createdAt - b.createdAt),
+  get: (wallet: string): AgentRecord | undefined => state.agents[wallet.toLowerCase()],
+  byAgentId: (agentId: string): AgentRecord[] => Object.values(state.agents).filter((a) => a.agentId === agentId),
+  put: (a: AgentRecord) => {
+    state.agents[a.wallet.toLowerCase()] = a
+    save()
+  },
+  save,
+}
+export const feedbackFrom = () => state.feedbackFrom
 
 export function audit(
   m: MissionRecord,
@@ -175,7 +201,7 @@ export function reliabilityOf(provider: string): { ok: number; total: number; sc
     if (m.chain?.provider.toLowerCase() !== provider.toLowerCase()) continue
     if (m.stage === 'settled' || m.stage === 'expired') {
       total++
-      if (m.verdict?.decision === 'accept' && m.stage === 'settled') ok++
+      if (m.chainOutcome === 1 || (m.chainOutcome === undefined && m.verdict?.decision === 'accept' && m.stage === 'settled')) ok++
     }
   }
   // Laplace-smoothed success rate: unknown providers start at 0.5, not at 1.0.

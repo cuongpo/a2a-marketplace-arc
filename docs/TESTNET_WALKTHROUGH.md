@@ -157,6 +157,80 @@ The second-source reading is a **SIMULATED fixture** served by a separate seller
 
 Paid reference: exactly one x402 request of 1000 atomic USDC (0.001) on `eip155:5042002` from payer `0x34d9dA6aec0370b86aDC96E8c3aF70aE8d8fe7A0` to seller `0xCD2A55206dDFE2F8d14C36Bad8379378D323cD26`. Gateway transfer id `7c30e76e-4ae1-4c2e-8031-dc7685617b5a`, status `received` (accepted by Gateway; batch settlement had no onchain hash yet, so none is claimed). Buyer Gateway balance went from 0.005 to 0.004 USDC. The job ran once (1 attempt).
 
+## Open agent network demo (missions #7 and #8)
+
+This section is the first run of the open agent network (external provider runner, directory, invitations, adapter-filtered trust and
+ERC-8004 feedback). It ran on the PUBLIC Arc Testnet after the API hardening: every API write was an EIP-712 wallet-signed request (the demo
+operator opened the requests; each external provider signed its own directory entry and quotes with its own key). No server-held key
+belongs to an external provider.
+
+**External providers (own keys, own env files, separate processes):**
+
+| Agent | ERC-8004 id | Wallet | Feed |
+|---|---|---|---|
+| Delta Field Operator ("X") | 897726 | `0xE22C543B07a9d9b5CBeba52976CF2C9e144A09b7` | operator-supplied numbers (`field-operator-upload`) |
+| Atlas Simulated Feed ("Y") | 897727 | `0xeD7c5BBd96c9A75e338BF8AC753a5cC29231B2Fb` | testnet SIMULATED feed (never selected; it only bid) |
+
+Total test USDC sent to the two new provider wallets for gas: **0.060** (0.035 + 0.025). The readings used the feed file values 421 mm
+(request B3) and 415 mm (request C4), typed by the test operator and labelled `field-operator-upload`; they are not physical measurements.
+
+**Onboarding and funding (confirmed receipts):**
+
+| Step | Block | Transaction | Confirmed logs |
+|---|---|---|---|
+| operator funds external provider X with 0.035 USDC gas | 70111057 | [0x4f684e1c3b...](https://explorer.testnet.arc.io/tx/0x4f684e1c3b14182f935708e93f7583836b2be066650dced853de63d1641f26cd) | Operator to External provider X: 0.035 USDC |
+| operator funds external provider Y with 0.025 USDC gas | 70111074 | [0x1043dcd0a5...](https://explorer.testnet.arc.io/tx/0x1043dcd0a54e82c2ea1d22bae90b1ca8e8c3fa800c086d10938ec8abb90a6731) | Operator to External provider Y: 0.025 USDC |
+| X registers ERC-8004 identity #897726 | 70111099 | [0xb6c28066ea...](https://explorer.testnet.arc.io/tx/0xb6c28066ea3b2fbdff299eb99f8de84cd31d43650d418b89592f9122aa25633b) | - |
+| X binds identity in the marketplace adapter | 70111107 | [0x3c70ce2eb1...](https://explorer.testnet.arc.io/tx/0x3c70ce2eb13cbdaf766f981ad83262e91004d9771844538d6c676ae6688b1dd0) | - |
+| X registers its device signer in EvidenceRegistry | 70111116 | [0x3c032609df...](https://explorer.testnet.arc.io/tx/0x3c032609df7984b0bf17d43142c9e616d74c3df5f82c201b8fa72a6d73674d6d) | - |
+| Y registers ERC-8004 identity #897727 | 70111133 | [0x84a9c89962...](https://explorer.testnet.arc.io/tx/0x84a9c89962591d6479f6bb66c728aec646e1ce3548b0f2e6307f08fe6018895f) | - |
+| Y binds identity in the marketplace adapter | 70111141 | [0xcca2b92e35...](https://explorer.testnet.arc.io/tx/0xcca2b92e35ddde12a3f5c1290c4f028a463a7b4f95be81ba0dc9437996c11813) | - |
+| Y registers its device signer in EvidenceRegistry | 70111150 | [0xff33936e18...](https://explorer.testnet.arc.io/tx/0xff33936e18b06ee19b477dbe3d640f0dc7a6eb95cb6e8a55e6cd5ccbd03d33da) | - |
+
+**Mission #7, request B3 (open auction, two invited agents, two signed bids: 0.30 vs 0.34 USDC; X won on price; trust was neutral for both):**
+
+| Step | Block | Transaction | Confirmed logs |
+|---|---|---|---|
+| mission #7: ERC-8004 outcome feedback via marketplace adapter | 70111748 | [0xa1c0c369bc...](https://explorer.testnet.arc.io/tx/0xa1c0c369bcef4ce866f0b022cf9addabfd903f893cbef33ed7d4bbea1a50d12b) | adapter FeedbackRecorded: provider agent #897726 value 100<br>adapter FeedbackRecorded: verifier agent #897707 value 100 |
+| mission #7: verifier withdraws credited USDC | 70111741 | [0x0a527c086a...](https://explorer.testnet.arc.io/tx/0x0a527c086a99a22305ba0b1a681d04b179b7f42d156b0d468c7488b869de914a) | 0xdF6f312e10E6D57eb9b7FAfc599c92e87288d16e to Verifier agent: 0.05 USDC |
+| mission #7: vault reconciles settlement and restores refund to operator budget | 70111732 | [0xc30bd96df5...](https://explorer.testnet.arc.io/tx/0xc30bd96df54272590111b31d7fc73aaaf75d7e8ed395946a243324ea2298875f) | - |
+| mission #7: keeper finalizes after challenge window and credits payouts | 70111727 | [0x9065ee26c5...](https://explorer.testnet.arc.io/tx/0x9065ee26c577cf7a9dcd600ee8687a708170a8c015b3af82cb31dd5ac9db8c81) | - |
+| mission #7: verifier submits signed accept verdict | 70111654 | [0x1d86ce6a00...](https://explorer.testnet.arc.io/tx/0x1d86ce6a00271c38d89146fab14482a07185444cbe84b17ece5c253f1cf1ccec) | - |
+| mission #7: buyer agent funds mission from vault | 70111619 | [0xcf5c6acfc4...](https://explorer.testnet.arc.io/tx/0xcf5c6acfc4ffbd7a4842235c51ea70315cd13f0f5518af2596f47bfc56c85d1d) | 0x8C29aC73ee2FeF44542192c4A217620473BCfe76 to 0xdF6f312e10E6D57eb9b7FAfc599c92e87288d16e: 0.35 USDC |
+| mission #7: external provider accepts assignment (runner) | 70111637 | [0x6b1a245b43...](https://explorer.testnet.arc.io/tx/0x6b1a245b43ac9c5872844c340c14e392c17ad7d1a0fdfcbbc7db39fd1ff69b5d) | - |
+| mission #7: external provider commits evidence hash (runner) | 70111649 | [0x03b35e7e6f...](https://explorer.testnet.arc.io/tx/0x03b35e7e6f11783f1f3d5331a0ae91a297f63de6f3b4a9763aecff375d0ddeea) | - |
+| mission #7: external provider withdraws its USDC credit (runner) | 70111729 | [0x182180c69e...](https://explorer.testnet.arc.io/tx/0x182180c69ed4c47f23cbced955276bd6298910b1c8e97af8254b27021ad14757) | 0xdF6f312e10E6D57eb9b7FAfc599c92e87288d16e to External provider X: 0.3 USDC |
+
+**Mission #8, request C4 (X bid 0.32, Y bid 0.30; X won because its adapter-posted ERC-8004 record raised its trust):**
+
+| Step | Block | Transaction | Confirmed logs |
+|---|---|---|---|
+| mission #8: ERC-8004 outcome feedback via marketplace adapter | 70112177 | [0xfda8d06838...](https://explorer.testnet.arc.io/tx/0xfda8d06838bbaca6f19e639c8acdc9e3dbaffda08442f875d34c164e9c49b9ba) | adapter FeedbackRecorded: provider agent #897726 value 100<br>adapter FeedbackRecorded: verifier agent #897707 value 100 |
+| mission #8: verifier withdraws credited USDC | 70112169 | [0xb884adcdba...](https://explorer.testnet.arc.io/tx/0xb884adcdba1a57e3b22cba2e05436254ed47bf64cfd5bbb656ffcad4be1ab04a) | 0xdF6f312e10E6D57eb9b7FAfc599c92e87288d16e to Verifier agent: 0.05 USDC |
+| mission #8: vault reconciles settlement and restores refund to operator budget | 70112160 | [0x0f37d39482...](https://explorer.testnet.arc.io/tx/0x0f37d3948205befe2306e9e0ed668a2e01ff0d422569172344eee18cf6002b1e) | - |
+| mission #8: keeper finalizes after challenge window and credits payouts | 70112150 | [0x4a0f3b67c1...](https://explorer.testnet.arc.io/tx/0x4a0f3b67c1cd4abc9e530dcd85dcf17220269c58d0c394e3bd6cae042914847f) | - |
+| mission #8: verifier submits signed accept verdict | 70112087 | [0x83f69ffb99...](https://explorer.testnet.arc.io/tx/0x83f69ffb99df78c100b9602a72a3b7ae39bd4385a65d2db519dfd26af9eea367) | - |
+| mission #8: buyer agent funds mission from vault | 70112047 | [0x7179dcc188...](https://explorer.testnet.arc.io/tx/0x7179dcc1886e5cd8151608d46e23f70ca334aa209d6d5cfaac87c1970b586ac9) | 0x8C29aC73ee2FeF44542192c4A217620473BCfe76 to 0xdF6f312e10E6D57eb9b7FAfc599c92e87288d16e: 0.37 USDC |
+| mission #8: external provider accepts assignment (runner) | 70112065 | [0x4d569d6eac...](https://explorer.testnet.arc.io/tx/0x4d569d6eacf37056448b33578405c10e5bdce1d300d291181fd9b80bd1fde989) | - |
+| mission #8: external provider commits evidence hash (runner) | 70112084 | [0xb165858746...](https://explorer.testnet.arc.io/tx/0xb165858746b39c595f1cc13b98765916ffc2f8f29c6d630c76a9b0dda577a518) | - |
+| mission #8: external provider withdraws its USDC credit (runner) | 70112154 | [0xd822ed8b50...](https://explorer.testnet.arc.io/tx/0xd822ed8b50b7e69ce298e088972587ca35b44f305a4204a7f7d9f831bcd560e1) | 0xdF6f312e10E6D57eb9b7FAfc599c92e87288d16e to External provider X: 0.32 USDC |
+
+Both missions ended Settled / ProviderPaid with the escrow at 0 liabilities. Vault budget: 1.50 USDC available before, 0.78 after (0.35 + 0.37 USDC
+funded; the winner's price plus the 0.05 USDC verifier fee each). Provider X wallet ends at 0.629204 USDC (0.30 + 0.32 earned, minus gas); provider Y
+wallet ends at 0.010948 USDC (unspent).
+
+**Reputation read back from the registry** (`getSummary` / `readAllFeedback` with clients = [our adapter], tag `fieldquest.delivery`): agent
+#897726 has 2 records, mean 100; agent #897727 has 0 records. Raw verification output: `docs/network-verification.txt` and `.json`
+(`bun run scripts/fq-verify-network.ts`).
+
+**Provider withdrawals on the receipt.** The escrow's `Withdrawn` event is account-level (no mission id). Receipts only list a withdrawal when this
+server's own transaction record links it. An external runner's withdrawal is not recorded by the server, so receipts #7 and #8 show the verifier's
+withdrawal but not X's; X's withdrawal transactions are listed above and confirmed by their own receipts.
+
+**A blocked request (no spend).** The first attempt (tile A3) was blocked at discovery because the runners advertised a 1800 s maximum ETA, which does
+not fit a 30 minute request with the one-minute margin. No bids, no escrow, no onchain mission. After lowering the advertised ETA to 1200 s the
+runners updated their directory entries (no transaction) and requests B3 and C4 proceeded.
+
 ## What was verified
 
 - Every transaction above: receipt status `success`, re-fetched from the public RPC after the journey, and (for the provider withdrawal) also found by the explorer API.

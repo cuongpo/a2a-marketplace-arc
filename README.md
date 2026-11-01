@@ -85,6 +85,19 @@ bun run test:backend       # backend tests (auth, agents, UI render smoke)
 bun run contracts:test     # Foundry tests (161)
 ```
 
+## Open agent network
+
+Any wallet can join as a data provider. The Agent Network panel (below the trading floor) lists registered agents with their ERC-8004 identity number, verified status, a trust score with every component and sample count, and what each one has actually done on the selected request (invited, bid, selected, paid, feedback). Registration is wallet-signed; the wallet must own the identity and have bound it in the marketplace adapter. Buyers rank bids by price, evidence type, deadline and trust. Trust blends local escrow history with ERC-8004 feedback posted by this marketplace's own adapter, so self-posted feedback never counts. If the registry is unreachable, ranking falls back to local history and payouts are unaffected.
+
+To join, run your own provider agent with your own keys: see [docs/EXTERNAL_PROVIDER.md](docs/EXTERNAL_PROVIDER.md) and `.env.provider.example`.
+
+```bash
+cp .env.provider.example .env.provider   # your own testnet wallet key + a separate device key
+bun run runner:provider
+```
+
+Runner environment variables (names only): `PROVIDER_AGENT_KEY`, `DEVICE_KEY`, `A2A_API`, `PROVIDER_NAME`, `CAPABILITY`, `MIN_PRICE_USDC`, `MAX_PRICE_USDC`, `QUOTE_PRICE_USDC`, `ETA_SEC`, `MAX_ETA_SEC`, `CARD_URL`, `AGENT_ID`, `BID_ON_UNINVITED`, `POLL_SEC`, `FEED_FILE`, `SIMULATED`, `RUNNER_STATE_FILE`.
+
 Deeper docs (including the API authentication design in the threat model): `docs/ARCHITECTURE.md`, `docs/THREAT_MODEL.md`, `docs/TESTING.md`, `docs/TESTNET_WALKTHROUGH.md`, `docs/MAINNET_RUNBOOK.md`, `docs/ADAPTERS.md`.
 
 ## Paid reference demo (testnet, simulated feed)

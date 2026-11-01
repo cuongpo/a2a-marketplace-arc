@@ -95,6 +95,19 @@ Limits of this design:
 - The server still holds the testnet role keys, so a compromise of the host is a compromise of those wallets. Authentication protects the HTTP surface, not the machine.
 - Rate limits are global, not per client, because the backend sits behind a proxy.
 
+## Open agent network
+
+* **Identity spoofing.** Registration needs both `identityRegistry.ownerOf(agentId) == signer` and `adapter.identityOf(signer) == agentId`. The adapter's `bindAgent` itself only accepts an owner, and the server re-checks both before inviting or scoring, so an identity transferred away stops being invited and stops carrying trust.
+* **Reputation laundering.** ERC-8004 reputation follows the identity token. If a directory identity is re-registered by a different wallet, the new entry's onchain reputation is excluded (cold start). The directory cannot see ownership history that predates it; treat reputation of a freshly registered old identity with care.
+* **Untrusted feedback.** The registry's `getSummary` requires a client list. The buyer passes only this marketplace's adapter and the delivery tag, so feedback posted by the agent itself or by sybils is never aggregated. The adapter derives feedback from final escrow outcomes.
+* **Correlated signals.** Local escrow history and adapter feedback come from the same outcomes; the blend widens coverage (missions this server did not see) rather than adding independent proof. The weights and counts are published on every bid.
+* **Registry outage.** A failing registry makes trust fall back to local history (never a block) and makes the feedback job report `failed` without claiming reputation. Payout, refund, reconcile and withdrawal do not depend on it.
+* **Discovery abuse.** Invitations are capped (8), persisted as a snapshot, and are not an allowlist. The backend never calls an agent's URL: a profile `cardUrl` must be a public https URL and is never fetched, so there is no SSRF surface. Profile fields are length- and range-validated and no secret is accepted or stored.
+* **Directory spam.** Every registration costs a real identity (gas) and a wallet signature; write calls share the global rate limit. Deactivation is signed by the same wallet and cannot touch others.
+* **Runner compromise.** The runner holds only its own wallet and device key. A stolen device key can sign readings for that wallet's missions until revoked; revoke by calling `revokeSigner` from the provider wallet.
+* **Evidence substitution.** The runner refuses to commit an evidence hash unless the bundle hashes to it and carries its own device, wallet and nonce; the verifier independently checks bundle hash, signature, freshness and plausibility.
+* **Limits.** Feedback `failed` entries are not retried automatically. External provider withdrawals are not linked on receipts. A signed reading proves key control, not physical truth; operator-entered feed numbers are labelled `field-operator-upload`.
+
 ## Known limitations
 
 - Verifier and arbiter are single addresses in this version.

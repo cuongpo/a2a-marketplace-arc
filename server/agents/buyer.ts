@@ -1,7 +1,8 @@
 import { getAddress, recoverTypedDataAddress, type Address } from 'viem'
 import { account, config } from '../env'
 import { CHAIN_ID, escrowEvents, publicClient, requireDeployment, send, vaultRead, waitForHash } from '../chain'
-import { audit, reliabilityOf } from '../store'
+import { audit } from '../store'
+import { trustFor } from '../network'
 import { decodeEscrowLogs, recordTx } from './common'
 import { PROVIDERS, quoteFor } from './provider'
 import { agentBudgetVaultAbi } from '../../src/shared/abis'
@@ -65,10 +66,11 @@ export async function decide(m: MissionRecord) {
     else if (now + q.etaSec > m.spec.deadlineUnix) excluded = 'cannot meet the deadline'
     const priceScore = Math.max(0, 1 - Number(price) / Math.max(1, Number(budget - fee)))
     const cap = CAP_SCORE[q.evidenceCapability]
-    const rel = reliabilityOf(q.provider).score
+    const trust = await trustFor(q.provider, true)
+    const rel = trust.blended
     const dl = Math.max(0, Math.min(1, (m.spec.deadlineUnix - now - q.etaSec) / Math.max(1, m.spec.deadlineUnix - now)))
     const score = W.price * priceScore + W.capability * cap + W.reliability * rel + W.deadline * dl
-    scored.push({ quote: q, score: Number(score.toFixed(4)), parts: { price: priceScore, capability: cap, reliability: rel, deadline: dl }, excluded })
+    scored.push({ quote: q, score: Number(score.toFixed(4)), parts: { price: priceScore, capability: cap, reliability: rel, deadline: dl, trust }, excluded, invited: !!m.invites?.entries.some((e) => e.wallet.toLowerCase() === q.provider.toLowerCase()) })
   }
   scored.sort((a, b) => b.score - a.score)
   const eligible = scored.filter((s) => !s.excluded)
@@ -86,7 +88,8 @@ export async function decide(m: MissionRecord) {
     (runner
       ? `Runner-up ${runner.quote.providerName} at ${usdc(BigInt(runner.quote.priceUsdc))} USDC scored ${runner.score}. `
       : 'Only one eligible quote. ') +
-    `Weights: price ${W.price}, evidence capability ${W.capability}, historical reliability ${W.reliability}, deadline slack ${W.deadline}. ` +
+    `Weights: price ${W.price}, evidence capability ${W.capability}, trust ${W.reliability}, deadline slack ${W.deadline}. ` +
+    `Trust blends local escrow history with ERC-8004 feedback posted by the marketplace adapter (${top.parts.trust?.note ?? 'local only'}); winner trust ${top.parts.reliability} from local ${top.parts.trust?.local.ok}/${top.parts.trust?.local.total} (weight ${top.parts.trust?.weights.local}) and onchain ${top.parts.trust?.onchain.count ?? 0} record(s) (weight ${top.parts.trust?.weights.onchain}). ` +
     scored
       .filter((s) => s.excluded)
       .map((s) => `${s.quote.providerName} excluded: ${s.excluded}.`)

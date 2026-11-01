@@ -2,11 +2,14 @@ import { randomUUID } from 'node:crypto'
 import { getAddress, isAddress, type Address } from 'viem'
 import { account, config, hasRole } from './env'
 import { errMsg, escrowRead, nowChainSec, readMission, registryRead, requireDeployment, send, waitForHash } from './chain'
+import { HttpError } from './errors'
 import { audit, missions, recoverInterruptedJobs, runJob } from './store'
 import { ObservationRejected, recordTx, S } from './agents/common'
 import { decide, fund, verifyQuote } from './agents/buyer'
 import { acceptAssignment, profileByAddress, submitEvidence, withdrawCredits } from './agents/provider'
 import { signAndSubmitVerdict } from './agents/verifier'
+import { computeInvites } from './network'
+import { feedbackEnabledFor, recordFeedback } from './feedback'
 import { purchaseSecondSource, referenceConfig } from './second-source'
 import { makeFixtureObservation, type FixtureVariant } from './fixture'
 import { buildEvidence } from './evidence'
@@ -35,14 +38,7 @@ export interface CreateReq {
   quoteWindowSec?: unknown
 }
 
-export class HttpError extends Error {
-  constructor(
-    public status: number,
-    message: string,
-  ) {
-    super(message)
-  }
-}
+export { HttpError }
 
 const isTerminal = (m: MissionRecord) =>
   m.stage === 'blocked' ||
@@ -50,7 +46,8 @@ const isTerminal = (m: MissionRecord) =>
   (['settled', 'expired'].includes(m.stage) &&
     m.jobs.reconcile?.status === 'done' &&
     (m.jobs.withdraw_provider?.status === 'done' || m.jobs.withdraw_provider?.status === 'failed' || !m.jobs.withdraw_provider) &&
-    (m.jobs.withdraw_verifier?.status === 'done' || m.jobs.withdraw_verifier?.status === 'failed' || !m.jobs.withdraw_verifier))
+    (m.jobs.withdraw_verifier?.status === 'done' || m.jobs.withdraw_verifier?.status === 'failed' || !m.jobs.withdraw_verifier) &&
+    (!feedbackEnabledFor(m) || m.jobs.feedback?.status === 'done' || (m.jobs.feedback?.status === 'failed' && m.jobs.feedback.attempts >= 4)))
 
 const str = (v: unknown, d: string): string => (typeof v === 'string' || typeof v === 'number' ? String(v) : d)
 
@@ -177,6 +174,14 @@ const STAGE_BY_STATUS: Record<number, MissionRecord['stage']> = {
 export async function advance(m: MissionRecord) {
   if (isTerminal(m)) return
   if (!m.decision) {
+    // Discovery runs once per custom request, before bidding closes. A failure never blocks the public auction.
+    if (m.scenario === 'custom' && m.stage === 'quoting' && !m.invites) {
+      const r = await runJob(m, 'invite', async () => computeInvites(m))
+      if (r === 'failed' && (m.jobs.invite?.attempts ?? 0) >= 4) {
+        m.invites = { at: Date.now(), entries: [], considered: 0, skipped: [], note: 'discovery unavailable; the public auction is unaffected' }
+        missions.save()
+      }
+    }
     if (m.stage === 'quoting' && (!m.quoteDeadlineUnix || Math.floor(Date.now() / 1000) >= m.quoteDeadlineUnix)) await runJob(m, 'decide', async () => decide(m))
     return
   }
@@ -260,6 +265,10 @@ export async function advance(m: MissionRecord) {
       break
     case S.Settled:
     case S.Expired: {
+      if (m.chainOutcome !== on.outcome) {
+        m.chainOutcome = on.outcome
+        missions.save()
+      }
       await runJob(m, 'reconcile', async (_j, setHash) => {
         const { hash, receipt } = await send('buyer', { address: dep.vault, abi: agentBudgetVaultAbi, functionName: 'reconcile', args: [dep.escrow, id] }, { onHash: setHash })
         recordTx(m, 'vault reconciles settlement and restores refund to operator budget', hash, 'buyer', receipt)
@@ -268,6 +277,15 @@ export async function advance(m: MissionRecord) {
       const prof = profileByAddress(m.chain.provider)
       if (on.outcome === 1 && prof) await runJob(m, 'withdraw_provider', (_j, setHash) => withdrawCredits(m, 'provider', prof.role, setHash))
       if (on.decision !== 0) await runJob(m, 'withdraw_verifier', (_j, setHash) => withdrawCredits(m, 'verifier', 'verifier', setHash))
+      // Last, in its own job: a registry problem must never hold up reconcile, withdrawals or refunds.
+      if (feedbackEnabledFor(m)) await runJob(m, 'feedback', async (j, setHash) => {
+        await recordFeedback(m, setHash, j.txHash)
+        if (m.feedback?.status === 'failed' || m.feedback?.status === 'partial') {
+          // The receipt is final. A later attempt is safe: adapter flags prevent re-recording a successful role.
+          j.txHash = undefined
+          throw new Error(`ERC-8004 feedback ${m.feedback.status}; retrying only roles not recorded by the adapter`)
+        }
+      })
       break
     }
   }
@@ -306,7 +324,8 @@ export async function submitObservation(m: MissionRecord, body: unknown, prepare
     throw new HttpError(400, 'reading fields are malformed')
   if (r.missionId !== m.chain.onchainId) throw new HttpError(400, 'reading is for a different mission')
   if (!o.rawPayload || typeof o.rawPayload !== 'object' || JSON.stringify(o.rawPayload).length > 8000) throw new HttpError(400, 'rawPayload missing or too large')
-  const kind = o.kind === 'device-adapter' ? 'device-adapter' : 'field-operator-upload'
+  // 'simulated-fixture' stays labelled simulated in evidence and receipts; accepted only where the testnet fixture is enabled.
+  const kind = o.kind === 'device-adapter' ? 'device-adapter' : o.kind === 'simulated-fixture' && config.fixtureEnabled ? 'simulated-fixture' : 'field-operator-upload'
   const observation: SignedReadingInput = {
     reading: { missionId: r.missionId, tileId: r.tileId, observedAt: r.observedAt, value: String(r.value), unit: r.unit, nonce: String(r.nonce), payloadHash: r.payloadHash },
     signature: o.signature,
