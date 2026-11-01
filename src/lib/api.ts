@@ -13,6 +13,7 @@ export interface Overview {
   network: 'testnet' | 'mainnet'
   readOnly?: boolean
   archived?: boolean
+  chainLive?: boolean
   chainId: number
   explorer: string
   usdc: string

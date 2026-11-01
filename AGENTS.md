@@ -24,7 +24,7 @@ Arc Mainnet pilot (5042) is deployed from the local deployer wallet: EvidenceReg
 
 Mainnet pilot operation: `.env.mainnet*` files are local and gitignored; do not upload or print private keys. The isolated backend and two provider runners were enabled for the user-authorized 5 USDC pilot. The backend signs only buyer and verifier actions; operator and arbiter keys stay outside its process. The operator deposited 0.80 USDC into the vault and set 0.50 per mission / 0.80 total / 0.80 daily caps with a 72-hour expiry. An independent audit is still required before production use.
 
-Mainnet pilot proof: escrow #1 settled ProviderPaid and #2 settled BuyerRefunded using real NOAA CO-OPS API observations. `node scripts/mainnet-verify-pilot.mjs` rechecks 13 successful mission receipts, evidence hashes and final balances without keys. The public Vercel viewer uses a separate `FQ_PUBLIC_READ_ONLY=1` server with no signing keys and a durable archived snapshot fallback; see `docs/MAINNET_RUNBOOK.md`. Never publish `data/mainnet` or `.env.mainnet*`.
+Mainnet pilot proof: escrow #1 settled ProviderPaid and #2 settled BuyerRefunded using real NOAA CO-OPS API observations. `node scripts/mainnet-verify-pilot.mjs` rechecks 13 successful mission receipts, evidence hashes and final balances without keys. The public Vercel viewer serves completed mission records and reads current Arc block/vault/escrow state directly from the public RPC with no signing keys; see `docs/MAINNET_RUNBOOK.md`. Never publish `data/mainnet` or `.env.mainnet*`.
 
 ## Decisions
 
