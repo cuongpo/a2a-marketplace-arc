@@ -20,6 +20,8 @@ export interface Overview {
   buyerAgent: string | null
   fixtureEnabled: boolean
   llmConfigured: boolean
+  referenceConfigured: boolean
+  referencePriceUsdc: string
   block: string
   wallets: WalletRow[]
   vault: {

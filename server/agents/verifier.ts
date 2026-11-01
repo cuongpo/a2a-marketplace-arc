@@ -1,8 +1,9 @@
-import { recoverTypedDataAddress } from 'viem'
+import { recoverMessageAddress, recoverTypedDataAddress } from 'viem'
 import { account } from '../env'
 import { CHAIN_ID, errMsg, readMission, registryRead, requireDeployment, send } from '../chain'
 import { audit, getEvidence, getPrivate, nonceKey, nonces } from '../store'
-import { randomNonce, referenceGaugeMm } from '../fixture'
+import { randomNonce } from '../fixture'
+import { REFERENCE_PRICE_USDC } from '../second-source'
 import { recordTx, S } from './common'
 import { missionEscrowAbi } from '../../src/shared/abis'
 import { hashCanonical } from '../../src/shared/canonical'
@@ -111,10 +112,28 @@ export async function verify(m: MissionRecord): Promise<{ decision: VerdictRecor
   if (reasons.some((r) => !r.ok)) return { decision: 'reject', reasons }
 
   if (m.spec.requireSecondSource) {
-    const ref = referenceGaugeMm(m.spec.tile)
-    const diff = Math.abs(ref - value)
+    const ref = m.secondSource
+    if (!ref) {
+      add('second_source', false, 'No paid, signed second-source reading is available; independent corroboration is pending')
+      return { decision: 'escalate', reasons }
+    }
+    const payload = { schema: ref.schema, missionId: ref.missionId, tile: ref.tile, valueMm: ref.valueMm, observedAt: ref.observedAt, sourceId: ref.sourceId, provenance: ref.provenance }
+    const hash = hashCanonical(payload)
+    let signatureValid = false
+    try {
+      const recovered = await recoverMessageAddress({ message: { raw: hash }, signature: ref.signature })
+      signatureValid = recovered.toLowerCase() === ref.signer.toLowerCase()
+    } catch { /* invalid signature */ }
+    const independent = ref.signer.toLowerCase() !== on.provider.toLowerCase() && ref.seller.toLowerCase() !== on.provider.toLowerCase()
+    const bound = ref.missionId === m.chain.onchainId && ref.tile === m.spec.tile && ref.observedAt >= Number(on.createdAt) && ref.observedAt <= Math.floor(ref.purchasedAt / 1000) + 30
+    const payment = ref.priceUsdc === REFERENCE_PRICE_USDC.toString() && ref.network === 'eip155:5042002' && !!ref.paymentReference
+    add('second_source_signature', signatureValid && ref.payloadHash.toLowerCase() === hash.toLowerCase() && independent && bound,
+      `reference signed by ${ref.signer}; source ${ref.sourceId}; distinct from primary provider; bound to mission`)
+    add('second_source_payment', payment, `Gateway/x402 authorization for ${ref.priceUsdc} atomic USDC; reference ${ref.paymentReference}`)
+    if (!signatureValid || !independent || !bound || !payment) return { decision: 'reject', reasons }
+    const diff = Math.abs(ref.valueMm - value)
     const ok = diff <= SECOND_SOURCE_TOLERANCE_MM
-    add('second_source', ok, `independent reference gauge (simulated) reads ${ref} ${m.spec.unit}; difference ${diff}, tolerance ${SECOND_SOURCE_TOLERANCE_MM}`)
+    add('second_source', ok, `${ref.sourceId} (${ref.provenance}) reads ${ref.valueMm} ${m.spec.unit}; difference ${diff}, tolerance ${SECOND_SOURCE_TOLERANCE_MM}. Signed testimony does not establish physical truth.`)
     if (!ok) return { decision: 'escalate', reasons }
   }
   return { decision: 'accept', reasons }

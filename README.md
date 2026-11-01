@@ -13,6 +13,7 @@ Built with [Arc Studio](https://studio.arc.io)
 - Connect any external provider wallet to submit one independently signed bid. The buyer agent checks its signature, price, ETA, evidence capability and historical reliability when bidding closes.
 - The winner uses its own wallet to accept the onchain assignment, register a signer, prepare evidence and commit its hash to escrow. Managed demo providers remain available only in scripted testnet journeys.
 - See the verifier agent's check list, a human dispute route for ambiguous evidence, and the settlement (payout or refund) with explorer links.
+- Optionally require a paid second source. After primary evidence arrives, a separate buyer wallet pays a reference service through Circle Gateway/x402 on Arc Testnet. The verifier checks the source signature, mission binding and value difference; a disagreement escalates to human review.
 - Withdraw credited USDC to the winning provider wallet and open a public receipt that recomputes evidence and reading hashes in your browser.
 - Set up your own operator vault from your wallet: deposit, authorise the buyer agent under caps, pause, or reclaim unspent funds.
 
@@ -42,7 +43,16 @@ bun run fq:setup --with-8004   # fund role wallets, deposit into the vault, set 
 bun run fq:journey accept      # provider A wins, payout, provider withdrawal
 bun run fq:journey reject      # provider B wins, implausible reading, rejection + refund
 bun run fq:journey dispute     # ambiguous reading, escalation, human arbiter
+FQ_REQUIRE_PAID_REFERENCE=1 bun run fq:journey accept  # accepted journey including a paid reference
 ```
+
+### Paid reference source
+
+The second-source path is opt-in and testnet-only. Configure `FQ_REFERENCE_SERVICE_URL`, `FQ_REFERENCE_BUYER_KEY`, `FQ_REFERENCE_SIGNER_ADDRESS`, and `FQ_REFERENCE_SELLER_ADDRESS` on the buyer backend. The buyer wallet needs at least 0.001 USDC in its **Circle Gateway balance** before it can purchase a reading. This is separate from the operator's mission vault. No paid source is configured by default, and the verifier never silently substitutes the old in-process reference fixture.
+
+An independently operated seller can run `bun run reference:seller` with `FQ_REFERENCE_SIGNER_KEY`, `FQ_REFERENCE_SELLER_ADDRESS`, and `FQ_REFERENCE_FEED_FILE` in its own environment. The JSON feed maps a slot such as `B2` to `{ "valueMm": 420, "observedAt": 1793450000, "sourceId": "gauge-42", "provenance": "device-adapter" }`. `observedAt` must be a real recent Unix timestamp from the source operator. For a clearly labelled protocol demo, use `"provenance": "simulated-fixture"` and `"observedAt": "now"`; the seller then timestamps the simulated value when it serves the request. A signature authenticates the operator, not the physical reading. The sample seller charges 0.001 USDC per call and signs a mission-bound payload. Keep its signing key out of the buyer backend and out of Git.
+
+For an example of funding a Gateway wallet and how the HTTP 402 payment flow works, see [Circle's Arc Testnet seller walkthrough](https://www.circle.com/blog/turn-your-api-into-a-storefront-for-agents). A Gateway payment authorization can be settled in a later batch, so the app records a payment reference and does not present it as an individual Arc transaction hash. A failed or interrupted purchase requires an explicit signed operator retry to avoid automatic duplicate charges. The `fq:journey dispute` script now requires this reference service to be configured and funded.
 
 ## Who can do what
 
@@ -61,6 +71,7 @@ Environment variables (names only, see `.env.example`):
 - `FQ_NETWORK` (testnet or mainnet), `FQ_SERVER_PORT`, `FQ_DATA_DIR`, `FQ_ENABLE_FIXTURE`, `FQ_VAULT_DEPOSIT`
 - `FQ_OPERATOR_KEY`, `FQ_BUYER_AGENT_KEY`, `FQ_PROVIDER_KEY`, `FQ_SENSOR_KEY`, `FQ_PROVIDER2_KEY`, `FQ_SENSOR2_KEY`, `FQ_VERIFIER_KEY`, `FQ_ARBITER_KEY` (testnet-only role keys, backend only)
 - `FQ_LLM_API_KEY` (optional, currently unused)
+- `FQ_REFERENCE_*` (optional, paid independent reference source; see `.env.example`)
 - `PROVIDER_KEY` and `DEVICE_KEY` (only for `scripts/ingest-sample.ts`: the bound provider wallet that authorises an upload, and the registered device key that signs the reading)
 - `FQ_RPC_URL_OVERRIDE` (optional, local fork rehearsal only)
 - `RPC_PROXY_BASE_URL`, `RPC_PROXY_TOKEN`, `RPC_PROXY_CHAINS` (optional outside Arc Studio)
@@ -75,3 +86,7 @@ bun run contracts:test     # Foundry tests (161)
 ```
 
 Deeper docs (including the API authentication design in the threat model): `docs/ARCHITECTURE.md`, `docs/THREAT_MODEL.md`, `docs/TESTING.md`, `docs/TESTNET_WALKTHROUGH.md`, `docs/MAINNET_RUNBOOK.md`, `docs/ADAPTERS.md`.
+
+## Paid reference demo (testnet, simulated feed)
+
+`bun run scripts/fq-reference-setup.ts keys A1` creates separate seller and buyer keys (the seller key goes only into the ignored `.env.seller`), `fund` moves at most 0.02 test USDC to the buyer and deposits 0.005 into Circle Gateway, and `bun run reference:seller` starts the seller on port 3002 using only `.env.seller`. Then `FQ_TILE_ACCEPT=A1 FQ_REQUIRE_PAID_REFERENCE=1 bun run fq:journey accept` buys one 0.001 USDC reference. The reference feed is a SIMULATED fixture and is labelled that way everywhere.

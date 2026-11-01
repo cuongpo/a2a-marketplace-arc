@@ -118,7 +118,7 @@ Public receipt route: `/receipt/de02363a` (also `/receipt/4`). Final onchain sta
 
 Public receipt route: `/receipt/5` (also `/receipt/6308814e`). Final onchain state: **Settled / ProviderPaid**. Budget requested: 1 USDC; funded 0.45 USDC (0.40 provider price + 0.05 verifier fee).
 
-This is the only mission that ran after the API was hardened. The only API write for it, `POST /missions` (which enabled the simulated fixture feed), was an EIP-712 wallet-signed request with a single-use server nonce, signed by the role wallet that the server's role check requires (the vault operator wallet to open the mission). Nothing was sent unsigned. The agents' onchain transactions below are signed by the agent wallets as before. The signing happened in `scripts/fq-journey.ts` via `scripts/lib/signed-api.ts` (the same protocol the browser uses), using the demo operator key held in the sandbox, so this proves the protocol and the role checks, not a visitor-driven browser flow.
+This was the first mission that ran after the API was hardened. The API write for it, `POST /missions` (which enabled the simulated fixture feed), was an EIP-712 wallet-signed request with a single-use server nonce, signed by the role wallet that the server's role check requires (the vault operator wallet to open the mission). Nothing was sent unsigned. The agents' onchain transactions below are signed by the agent wallets as before. The signing happened in `scripts/fq-journey.ts` via `scripts/lib/signed-api.ts` (the same protocol the browser uses), using the demo operator key held in the sandbox, so this proves the protocol and the role checks, not a visitor-driven browser flow.
 
 The reading (401 mm) came from the testnet-only SIMULATED sensor fixture. It is not a physical measurement. The payment is real test USDC movement.
 
@@ -135,6 +135,28 @@ The reading (401 mm) came from the testnet-only SIMULATED sensor fixture. It is 
 
 Verified by `bun run scripts/fq-verify.ts`: all eight receipts `success`; funding Transfer AgentBudgetVault to MissionEscrow 0.45 USDC; payout Transfers MissionEscrow to Provider A (0.40) and to the verifier (0.05) in their own withdrawal transactions; refund 0 (accepted, nothing to refund). The browser-side receipt proofs (evidence hash, reading digest, device signature, spec hash, verdict reason hash) were recomputed from the live receipt and all passed.
 
+### Mission #6: Accepted journey with ONE paid x402 reference purchase (tile A1, Provider A)
+
+Public receipt route: `/receipt/6` (also `/receipt/6bc3df6d`). Final onchain state: **Settled / ProviderPaid**. Funded 0.45 USDC (0.40 provider price + 0.05 verifier fee). Every API write was an EIP-712 wallet-signed request.
+
+The second-source reading is a **SIMULATED fixture** served by a separate seller process with its own wallet (`demo-reference-seller`, provenance `simulated-fixture`, 394 mm). It is a protocol test, not a physical field reading. The primary provider's simulated sensor reading was 406 mm; the difference of 12 mm was inside the 80 mm tolerance.
+
+| Step | Transaction |
+|---|---|
+| operator funds the new buyer wallet with 0.02 USDC | [0xa4b4ad48...](https://explorer.testnet.arc.io/tx/0xa4b4ad4822290344bfd67a9e730e98a6351d99d7cd0585ccff6bcb6fb69d5fb3) |
+| buyer approves the Gateway wallet | [0xd6f5a536...](https://explorer.testnet.arc.io/tx/0xd6f5a53645cfe56995f3f8c8c4af5df78e71f1fb1963fa4dbc4ba92941a5fed2) |
+| buyer deposits 0.005 USDC into Circle Gateway | [0x212e4c9e...](https://explorer.testnet.arc.io/tx/0x212e4c9ededd945a236d19d350a4040a1084c728137fba4dc35a7e193794f62f) |
+| buyer agent funds mission from vault (0.45 USDC to escrow) | [0x96351f5f...](https://explorer.testnet.arc.io/tx/0x96351f5f35ce74a904b920863495ed0f599131fcb163d041054ee6457eeacf8e) |
+| provider accepts | [0x7de16c34...](https://explorer.testnet.arc.io/tx/0x7de16c34b4ba77f17ec1b6381ccc9f8917ef1c0eefbd22cf367530f3a85cc7bf) |
+| provider submits evidence hash | [0xeca2fe36...](https://explorer.testnet.arc.io/tx/0xeca2fe368b4973f942a8cd103c2c72e799d94d42938fbfa0a5d78cac794da61e) |
+| verifier signed accept verdict | [0x4f5e1cbb...](https://explorer.testnet.arc.io/tx/0x4f5e1cbb10a5368dd32a012d55b695d6245d6a7cd7f25ec1c63fa8e495b7f2b4) |
+| keeper finalizes | [0xb0b1f348...](https://explorer.testnet.arc.io/tx/0xb0b1f348bb10f35679a4fc2a4abe23a04816ff7b692830254ea42b93d8ca53cd) |
+| vault reconciles | [0x628b4317...](https://explorer.testnet.arc.io/tx/0x628b4317fc99ac10859738d89a389ad4cc603c333e921caf7e337ff81c810b64) |
+| provider withdraws 0.40 USDC | [0xedbe49fe...](https://explorer.testnet.arc.io/tx/0xedbe49fe7c8556406e1abb0ee3b746c5fa27cbf2f4b5c88b62ecabe8f4aa1645) |
+| verifier withdraws 0.05 USDC | [0x374c4a58...](https://explorer.testnet.arc.io/tx/0x374c4a5820e58d966b6fcb03dcdb12ce6b6598eb9f58c7de77e573a8053d63d7) |
+
+Paid reference: exactly one x402 request of 1000 atomic USDC (0.001) on `eip155:5042002` from payer `0x34d9dA6aec0370b86aDC96E8c3aF70aE8d8fe7A0` to seller `0xCD2A55206dDFE2F8d14C36Bad8379378D323cD26`. Gateway transfer id `7c30e76e-4ae1-4c2e-8031-dc7685617b5a`, status `received` (accepted by Gateway; batch settlement had no onchain hash yet, so none is claimed). Buyer Gateway balance went from 0.005 to 0.004 USDC. The job ran once (1 attempt).
+
 ## What was verified
 
 - Every transaction above: receipt status `success`, re-fetched from the public RPC after the journey, and (for the provider withdrawal) also found by the explorer API.
@@ -143,8 +165,8 @@ Verified by `bun run scripts/fq-verify.ts`: all eight receipts `success`; fundin
 - Rejected journeys: the escrow paid the verifier fee 0.05 USDC and the **buyer refund went from the escrow back to the vault** (0.60, 0.40 and 0.30 USDC respectively), and the vault credited it to the operator's budget. The provider received nothing.
 - Mission #4 is the rejection with a provider wallet separate from the accepted journey: Paddy Scout Network (Provider B, `0xa89732...CB6e4`) was chosen by the buyer agent, submitted an implausible simulated reading (valid signature, outside plausibility bounds), and was rejected.
 - Escrow held 0 USDC with 0 liabilities after every mission.
-- After missions #1 to #4 the vault had 2.40 USDC available, 0 committed, 0.60 net spent (0.45 + 0.05 + 0.05 + 0.05), matching the transfers. After mission #5 it had 1.95 available and 1.05 net spent.
-- Evidence hash and spec hash recomputed by the receipt API match the onchain commitments for all five missions.
+- After missions #1 to #4 the vault had 2.40 USDC available, 0 committed, 0.60 net spent (0.45 + 0.05 + 0.05 + 0.05), matching the transfers. After mission #5 it had 1.95 available and 1.05 net spent. After mission #6 it had 1.50 available.
+- Evidence hash and spec hash recomputed by the receipt API match the onchain commitments for missions #1 to #5.
 - Mission #5 (after hardening): vault to escrow 0.45 USDC; escrow to Provider A 0.40 USDC; escrow to verifier 0.05 USDC. The vault then showed 1.95 USDC available, 0 committed, 1.05 net spent; the escrow held 0 with 0 liabilities.
 
 ## Honest notes

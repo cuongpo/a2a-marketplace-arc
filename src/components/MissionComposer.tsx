@@ -12,7 +12,7 @@ const SCENARIOS: { id: Scenario; title: string; body: string; sim: boolean }[] =
   { id: 'custom', title: 'Open A2A auction', body: 'External provider wallets bid during a public quote window. The winning provider accepts and delivers onchain.', sim: false },
   { id: 'accept', title: 'Scripted: accepted journey', body: 'Provider A wins; a SIMULATED sensor fixture feeds a plausible reading; payout and withdrawal.', sim: true },
   { id: 'reject', title: 'Scripted: rejected journey', body: 'Provider B wins on price; a SIMULATED fixture sends an implausible reading; rejection and refund.', sim: true },
-  { id: 'dispute', title: 'Scripted: dispute journey', body: 'A SIMULATED reading disagrees with the reference gauge; the verifier escalates and the arbiter wallet must rule.', sim: true },
+  { id: 'dispute', title: 'Scripted: dispute journey', body: 'A SIMULATED primary reading can disagree with a paid, signed reference. The verifier then escalates for arbiter review.', sim: true },
 ]
 
 export function MissionComposer({ tile, ov, onCreated, onOpenVault }: { tile: string; ov: Overview | null; onCreated: (m: PMission) => void; onOpenVault: () => void }) {
@@ -39,7 +39,7 @@ export function MissionComposer({ tile, ov, onCreated, onOpenVault }: { tile: st
   const sim = SCENARIOS.find((s) => s.id === scenario)?.sim ?? false
   const authorised = vault.data?.authorised === true
   const overBudget = vault.data ? budgetRaw > BigInt(vault.data.available) : false
-  const disabled = busy || !isConnected || !ov?.deployed || !!budgetBad || !authorised || overBudget || (sim && !ov.fixtureEnabled)
+  const disabled = busy || !isConnected || !ov?.deployed || !!budgetBad || !authorised || overBudget || (sim && !ov.fixtureEnabled) || ((secondSource || scenario === 'dispute') && !ov.referenceConfigured)
 
   async function submit() {
     setBusy(true)
@@ -52,7 +52,7 @@ export function MissionComposer({ tile, ov, onCreated, onOpenVault }: { tile: st
         deadlineMinutes: Number(minutes),
         quoteWindowSec: scenario === 'custom' ? Number(quoteWindow) : undefined,
         autoFixture: scenario === 'accept' || scenario === 'reject',
-        requireSecondSource: scenario !== 'custom' && secondSource,
+        requireSecondSource: scenario === 'dispute' || secondSource,
       })
       onCreated(m)
     } catch (e) {
@@ -137,10 +137,12 @@ export function MissionComposer({ tile, ov, onCreated, onOpenVault }: { tile: st
       {budgetBad ? <p className="mt-1 text-xs text-[var(--danger)]">{budgetBad}</p> : null}
       {overBudget ? <p className="mt-1 text-xs text-[var(--danger)]">Budget exceeds the USDC available in your vault.</p> : null}
 
-      {scenario !== 'custom' ? <label className="mt-3 flex items-center gap-2 text-sm">
+      {scenario !== 'dispute' ? <label className="mt-3 flex items-center gap-2 text-sm">
         <input type="checkbox" className="!min-h-0 !w-auto" checked={secondSource} onChange={(e) => setSecondSource(e.target.checked)} />
-        Include simulated reference gauge check in the scripted demo
-      </label> : null}
+        Buy an independently signed reference reading via x402 ({usdc(ov?.referencePriceUsdc)} USDC from a separate Gateway balance)
+      </label> : <p className="mt-3 text-xs text-[var(--muted)]">This scenario requires a paid reference source.</p>}
+      {(secondSource || scenario === 'dispute') && !ov?.referenceConfigured ? <p className="mt-2 text-xs text-[var(--warn)]">Paid reference service is not configured on the backend yet.</p> : null}
+      {(secondSource || scenario === 'dispute') && ov?.referenceConfigured ? <p className="mt-2 text-xs text-[var(--subtle)]">The separate Gateway buyer wallet must hold at least 0.001 USDC before the evidence arrives.</p> : null}
 
       <div className="mt-4 inset p-3 text-xs text-[var(--muted)]">
         <div className="flex justify-between">

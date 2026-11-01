@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
 import { ArrowLeft, Copy, ShieldCheck, ShieldX } from 'lucide-react'
-import { hashTypedData, recoverTypedDataAddress, type Address } from 'viem'
+import { hashTypedData, recoverMessageAddress, recoverTypedDataAddress, type Address } from 'viem'
 import { toast } from 'sonner'
 import { navigate, usdc, useApi } from '@/lib/api'
 import { buildShareLink } from '@/lib/share'
 import { hashCanonical } from '@/shared/canonical'
 import { readingTypes, registryDomain } from '@/shared/typed'
-import type { EvidenceBundle, MissionSpec } from '@/shared/types'
+import type { EvidenceBundle, MissionSpec, SecondSourceRecord } from '@/shared/types'
 import { AddrLink, Badge, Empty, ErrorBox, SimBadge, Stat, TxLink } from './ui'
 
 interface Receipt {
@@ -28,6 +28,7 @@ interface Receipt {
   settlement: Record<string, string> | null
   events: { name: string; args: Record<string, unknown>; txHash: string; block: string }[]
   simulated: boolean | null
+  secondSource: SecondSourceRecord | null
 }
 interface Proof {
   label: string
@@ -66,6 +67,14 @@ export async function computeProofs(r: Receipt): Promise<Proof[]> {
   }
   if (r.spec) out.push({ label: 'Mission spec matches the onchain objective hash', ok: hashCanonical(r.spec).toLowerCase() === String(r.mission.objectiveHash).toLowerCase(), detail: 'Canonical spec hash recomputed in your browser.' })
   if (r.verdict) out.push({ label: 'Verdict reasons match the signed reason hash', ok: hashCanonical({ decision: r.verdict.decision, reasons: r.verdict.reasons }).toLowerCase() === String(r.mission.verdictReasonHash).toLowerCase(), detail: 'The verifier signed this reasonHash; the listed reasons hash to it.' })
+  if (r.secondSource) {
+    const s = r.secondSource
+    const payload = { schema: s.schema, missionId: s.missionId, tile: s.tile, valueMm: s.valueMm, observedAt: s.observedAt, sourceId: s.sourceId, provenance: s.provenance }
+    const hash = hashCanonical(payload)
+    let recovered = ''
+    try { recovered = await recoverMessageAddress({ message: { raw: hash }, signature: s.signature }) } catch { /* invalid signature */ }
+    out.push({ label: 'Paid reference signature and mission binding', ok: recovered.toLowerCase() === s.signer.toLowerCase() && hash.toLowerCase() === s.payloadHash.toLowerCase() && s.missionId === r.onchainId && s.tile === (r.spec?.tile ?? r.tile) && s.signer.toLowerCase() !== String(r.mission.provider).toLowerCase(), detail: `Reference operator ${s.signer}; payload ${hash.slice(0, 20)}...` })
+  }
   return out
 }
 
@@ -185,6 +194,17 @@ export function ReceiptPage({ refId }: { refId: string }) {
               </ul>
             </section>
           ) : null}
+
+          {data.secondSource ? <section className="card p-5" aria-label="Paid second source">
+            <div className="label mb-2">Paid reference source</div>
+            <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+              <Stat label="Reference" value={`${data.secondSource.valueMm} mm`} sub={data.secondSource.sourceId} />
+              <Stat label="Paid" value={usdc(data.secondSource.priceUsdc)} sub="USDC via Gateway/x402" />
+              <Stat label="Provenance" value={data.secondSource.provenance} />
+              <Stat label="Difference" value={data.evidence ? `${Math.abs(data.secondSource.valueMm - Number(data.evidence.reading.value))} mm` : '-'} />
+            </div>
+            <p className="mt-3 break-all text-xs text-[var(--subtle)]">Gateway payment reference: {data.secondSource.paymentReference}. Gateway authorizations may settle in a later onchain batch; this is not necessarily an individual Arc transaction hash.</p>
+          </section> : null}
 
           <section className="card p-5" aria-label="Onchain events">
             <div className="label mb-2">Onchain events (from the escrow contract)</div>

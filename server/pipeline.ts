@@ -7,6 +7,7 @@ import { ObservationRejected, recordTx, S } from './agents/common'
 import { decide, fund, verifyQuote } from './agents/buyer'
 import { acceptAssignment, profileByAddress, submitEvidence, withdrawCredits } from './agents/provider'
 import { signAndSubmitVerdict } from './agents/verifier'
+import { purchaseSecondSource, referenceConfig } from './second-source'
 import { makeFixtureObservation, type FixtureVariant } from './fixture'
 import { buildEvidence } from './evidence'
 import { agentBudgetVaultAbi, missionEscrowAbi } from '../src/shared/abis'
@@ -240,7 +241,13 @@ export async function advance(m: MissionRecord) {
     case S.Submitted:
       if (now >= Number(on.submittedAt) + Number(await escrowRead<number>('VERIFIER_TIMEOUT')) + MARGIN_SEC && m.jobs.verdict?.status !== 'running') {
         await call('escalateStale', [id], keeperRole, 'keeper escalates stale mission (verifier gave no verdict)', 'keeper')
-      } else await runJob(m, 'verdict', (_j, setHash) => signAndSubmitVerdict(m, setHash))
+      } else {
+        if (m.spec.requireSecondSource && !m.secondSource) {
+          if (referenceConfig() && !m.secondSourceAttemptAt) await runJob(m, 'second_source', () => purchaseSecondSource(m))
+          break // no reference means no affirmative verdict; preserve verifier timeout
+        }
+        await runJob(m, 'verdict', (_j, setHash) => signAndSubmitVerdict(m, setHash))
+      }
       break
     case S.Accepted:
     case S.Rejected:

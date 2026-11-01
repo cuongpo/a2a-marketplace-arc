@@ -33,7 +33,7 @@ const FORK = !!process.env.FQ_RPC_URL_OVERRIDE
 const explorer = process.env.FQ_EXPLORER ?? 'https://explorer.testnet.arc.io'
 const link = (h: string) => (FORK ? `(fork tx ${h}: local fork only, not on the public explorer)` : `${explorer}/tx/${h}`)
 
-let m = await signedPost<M>(API, operator, '/missions', { tile: tileFor[kind], scenario: kind, budgetUsdc: '1', deadlineMinutes: 30, autoFixture: kind !== 'dispute', challengeWindowSec: 30 })
+let m = await signedPost<M>(API, operator, '/missions', { tile: tileFor[kind], scenario: kind, budgetUsdc: '1', deadlineMinutes: 30, autoFixture: kind !== 'dispute', requireSecondSource: kind === 'dispute' || process.env.FQ_REQUIRE_PAID_REFERENCE === '1', challengeWindowSec: 30 })
 console.log(`mission ${m.id} created for tile ${tileFor[kind]} (${kind})`)
 let disputed = false
 const t0 = Date.now()

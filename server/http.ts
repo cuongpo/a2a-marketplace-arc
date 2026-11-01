@@ -78,6 +78,19 @@ async function mutate(req: Request, path: string): Promise<Response> {
     await submitQuote(m, body, signer)
     return json(await publicMission(m), 201)
   }
+  if ((r = path.match(/^\/missions\/([\w-]+)\/reference\/retry$/))) {
+    const m = must(r[1])
+    requireMissionOperator(signer, m)
+    if (!m.spec.requireSecondSource || !m.chain || m.secondSource || (!m.secondSourceAttemptAt && m.jobs.second_source?.status !== 'failed') || m.stage !== 'evidence_submitted')
+      throw new HttpError(409, 'reference purchase is not waiting for operator retry')
+    // A failed HTTP response may follow a successful Gateway authorization.
+    // The operator must explicitly approve another paid attempt.
+    m.secondSourceAttemptAt = undefined
+    delete m.jobs.second_source
+    missions.save()
+    deps.kick(m)
+    return json(await publicMission(m))
+  }
   if ((r = path.match(/^\/missions\/([\w-]+)\/observation$/))) {
     const m = must(r[1])
     requireBoundProvider(signer, m)

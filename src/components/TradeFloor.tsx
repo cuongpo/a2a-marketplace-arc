@@ -72,6 +72,7 @@ export function TradeFloor({ mission, onOpenDetails }: { mission: PMission | nul
     provider: winner ? `${usdc(BigInt(winner.priceUsdc))} USDC bid selected` : bidCount === 1 && mission?.quotes[0] ? `Bid: ${usdc(BigInt(mission.quotes[0].priceUsdc))} USDC` : bidCount > 1 ? `${bidCount} signed bids received` : 'Waiting for bids',
     escrow: paid && mission?.chain ? `${usdc(BigInt(mission.chain.providerPrice))} USDC paid to provider` : refunded ? 'Buyer refunded' : split ? 'Split payout' : total !== null ? `${usdc(total)} USDC locked` : 'No USDC locked',
     verifier: done.verdict && mission?.verdict ? `${mission.verdict.decision.toUpperCase()} verdict` : done.delivery ? 'Evidence submitted' : 'Awaiting evidence',
+    reference: mission?.secondSource ? `${mission.secondSource.valueMm} mm · ${usdc(mission.secondSource.priceUsdc)} USDC paid` : 'Waiting for paid reference',
   }
 
   return <section className="trade-floor" aria-label="Live agent trade visualization">
@@ -85,7 +86,7 @@ export function TradeFloor({ mission, onOpenDetails }: { mission: PMission | nul
     </div>
 
     <div className="trade-floor-scene">
-      <MarketRoom key={mission?.id ?? 'empty'} phase={blocked || (actualDone.settlement && !activeReplay) ? null : next ?? null} providers={floorProviders} selectedProviderId={selectedId} onSelectProvider={selectQuote} escrowed={done.escrow} evidence={done.delivery} settled={done.settlement} outcome={mission?.onchain?.outcome ?? null} speech={speech} />
+      <MarketRoom key={mission?.id ?? 'empty'} phase={blocked || (actualDone.settlement && !activeReplay) ? null : next ?? null} providers={floorProviders} selectedProviderId={selectedId} onSelectProvider={selectQuote} escrowed={done.escrow} evidence={done.delivery} settled={done.settlement} outcome={mission?.onchain?.outcome ?? null} secondSource={!!mission?.secondSource && done.delivery} speech={speech} />
     </div>
     {quotes.length > 0 ? <div className="floor-auction" aria-label="Signed provider bids">
       <div className="floor-auction-title"><span>PROVIDER AUCTION</span><strong>{quotes.length} signed bid{quotes.length === 1 ? '' : 's'}{winner ? ' · winner selected' : blocked ? ' · auction stopped' : mission?.stage === 'quoting' ? ' · accepting bids' : ' · awaiting decision'}</strong></div>
@@ -107,6 +108,7 @@ export function TradeFloor({ mission, onOpenDetails }: { mission: PMission | nul
       <strong>ARC TRADE PROOF</strong>
       {done.escrow && mission.chain ? <span>Escrow #{mission.chain.onchainId} · {usdc(BigInt(mission.chain.providerPrice) + BigInt(mission.chain.verifierFee))} USDC</span> : null}
       {done.delivery && mission.evidenceHash ? <span>Evidence {short(mission.evidenceHash, 12, 8)}</span> : null}
+      {done.delivery && mission.secondSource ? <span>Reference {mission.secondSource.valueMm} mm · {usdc(mission.secondSource.priceUsdc)} USDC x402</span> : null}
       {done.verdict && mission.verdict ? <span>Verdict {mission.verdict.decision.toUpperCase()}</span> : null}
       {done.settlement ? <span>{mission.onchain?.outcome ?? mission.onchain?.status}</span> : null}
       {!activeReplay && mission.chain && mission.txs.filter((tx) => tx.status === 'success').slice(-2).map((tx) => <TxLink key={tx.hash} chainId={mission.chain!.chainId} hash={tx.hash} label={tx.label} />)}

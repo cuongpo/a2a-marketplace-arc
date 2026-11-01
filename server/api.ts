@@ -19,6 +19,7 @@ import { OUTCOME_NAMES, STATUS_NAMES, tileIdOf } from '../src/shared/typed'
 import type { MissionRecord } from '../src/shared/types'
 import type { Address } from 'viem'
 import { same, type AuthzDeps, type PolicyView } from './authz'
+import { referenceConfig, REFERENCE_PRICE_USDC } from './second-source'
 
 export const TILE_ROWS = [1, 2, 3, 4]
 export const TILE_COLS = ['A', 'B', 'C', 'D', 'E', 'F']
@@ -110,6 +111,8 @@ export async function overview() {
     buyerAgent: hasRole('buyer') ? account('buyer').address : null,
     fixtureEnabled: config.fixtureEnabled,
     llmConfigured: !!config.llmKey,
+    referenceConfigured: !!referenceConfig(),
+    referencePriceUsdc: REFERENCE_PRICE_USDC.toString(),
     block: (await publicClient.getBlockNumber().catch(() => 0n)).toString(),
     wallets,
     vault,
@@ -225,6 +228,7 @@ async function buildReceipt(ref: string) {
     evidence,
     evidenceHashMatchesOnchain: evidenceHashMatches,
     verdict: local?.verdict ? { decision: local.verdict.decision, reasons: local.verdict.reasons, reasonHash: local.verdict.reasonHash } : null,
+    secondSource: local?.secondSource ?? null,
     settlement: settled ? settled.args : null,
     events: events.map((e) => ({ name: e.eventName, args: e.args, txHash: e.transactionHash, block: e.blockNumber })),
     simulated: evidence?.provenance.simulated ?? null,

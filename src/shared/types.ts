@@ -88,6 +88,28 @@ export interface VerdictRecord {
   verifier: Address
 }
 
+/** A separately operated, paid reference reading. The x402 payment is a Gateway
+ * authorization and may settle in a later batch, so `transaction` is not
+ * necessarily an Arc transaction hash. */
+export interface SecondSourceRecord {
+  schema: 'a2a.reference/1'
+  missionId: string
+  tile: string
+  valueMm: number
+  observedAt: number
+  sourceId: string
+  provenance: 'field-operator-upload' | 'device-adapter' | 'simulated-fixture'
+  signer: Address
+  signature: Hex
+  payloadHash: Hex
+  seller: Address
+  payer: Address
+  network: string
+  priceUsdc: string
+  paymentReference: string
+  purchasedAt: number
+}
+
 export type StageId =
   | 'quoting'
   | 'decided'
@@ -156,6 +178,8 @@ export interface MissionRecord {
   observation?: SignedReadingInput
   evidenceHash?: Hex
   verdict?: VerdictRecord
+  secondSource?: SecondSourceRecord
+  secondSourceAttemptAt?: number
   txs: TxRecord[]
   audit: AuditEntry[]
   jobs: Record<string, JobRecord>

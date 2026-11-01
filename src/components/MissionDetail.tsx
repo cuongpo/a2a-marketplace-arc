@@ -7,6 +7,7 @@ import { BidList } from './BidList'
 import { ProviderBid } from './ProviderBid'
 import { ProviderFulfillment } from './ProviderFulfillment'
 import { EvidencePanel } from './EvidencePanel'
+import { PaidReferencePanel } from './PaidReferencePanel'
 import { Badge, ErrorBox, Stat, TxLink } from './ui'
 
 export function MissionDetail({ m, ov, onChange }: { m: PMission; ov: Overview | null; onChange: () => void }) {
@@ -61,6 +62,7 @@ export function MissionDetail({ m, ov, onChange }: { m: PMission; ov: Overview |
       </section>
 
       <AgentTrack m={m} />
+      <PaidReferencePanel m={m} ov={ov} onChange={onChange} />
 
       <section className="card space-y-4 p-4 sm:p-5">
         <BidList m={m} />
